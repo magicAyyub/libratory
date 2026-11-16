@@ -10,6 +10,7 @@ import numpy as np
 import soundfile as sf
 
 from chunk_io import load_existing_chunk, read_chunks, write_chunk_manifest
+from pocket_text import synthesis_text_for
 
 
 PAUSE_MS = 250
@@ -114,8 +115,9 @@ def main() -> None:
             raise RuntimeError(f"--{required} is required")
 
     chunks = read_chunks(args.input)
+    synthesis_chunks = [synthesis_text_for(chunk, args.language) for chunk in chunks]
     if args.chunks_dir:
-        write_chunk_manifest(args.chunks_dir, chunks)
+        write_chunk_manifest(args.chunks_dir, chunks, synthesis_chunks)
     print(json.dumps({"type": "chunks", "total": len(chunks)}), flush=True)
 
     loaded: list = []
@@ -142,7 +144,7 @@ def main() -> None:
         waveform = load_existing_chunk(args.chunks_dir, index)
         if waveform is None:
             model, voice_state = synthesizer()
-            waveform = model.generate_audio(voice_state, chunk).numpy().astype(np.float32).squeeze()
+            waveform = model.generate_audio(voice_state, synthesis_chunks[index - 1]).numpy().astype(np.float32).squeeze()
             if waveform.size == 0:
                 raise RuntimeError(f"chunk {index} produced no audio")
             if args.chunks_dir:

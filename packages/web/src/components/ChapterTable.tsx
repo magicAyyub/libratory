@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
+import { trpc } from "../trpc.ts";
 import { Button } from "./Button.tsx";
 import { PillToggle } from "./PillToggle.tsx";
 import { Menu } from "./Menu.tsx";
@@ -31,6 +32,7 @@ import {
   IconPlay,
   IconRefresh,
   IconRename,
+  IconStop,
 } from "./icons.tsx";
 
 export type ChapterRow = {
@@ -119,6 +121,13 @@ export function ChapterTable({
   /** The translation pairing is shown against, when there is one to pair with. */
   bilingualLanguage?: string | null;
 }) {
+  const utils = trpc.useUtils();
+  const stopSynthesisMutation = trpc.chapters.suspend.useMutation({
+    onSuccess: () => {
+      utils.books.get.invalidate();
+      utils.chapters.get.invalidate();
+    },
+  });
   const [searchParams, setSearchParams] = useSearchParams();
 
   // The open chapter lives in the URL (?chapter=<id>) and nowhere else, so a reload, a shared link
@@ -642,23 +651,37 @@ export function ChapterTable({
                           <IconContinue className="h-4 w-4" />
                         </Button>
                       ) : null}
-                      <Button
-                        variant="icon"
-                        size="sm"
-                        onClick={() => setSynthesizeChapterId(chapter.id)}
-                        disabled={SYNTH_BUSY.includes(chapter.status) || chapter.synthesizable === false}
-                        title={
-                          chapter.synthesizable === false
-                            ? "No finished translation for this chapter"
-                            : SYNTH_BUSY.includes(chapter.status)
-                              ? "Can't re-synthesize while it's being processed"
-                              : "Pick a voice and synthesize this chapter's audio again, replacing the current audio"
-                        }
-                        aria-label="Re-synthesize chapter audio"
-                        data-testid="row-synthesize"
-                      >
-                        <IconRefresh className="h-4 w-4" />
-                      </Button>
+                      {!variant && chapter.status === "synthesizing" ? (
+                        <Button
+                          variant="icon"
+                          size="sm"
+                          onClick={() => stopSynthesisMutation.mutate({ id: chapter.id })}
+                          disabled={stopSynthesisMutation.isPending && stopSynthesisMutation.variables?.id === chapter.id}
+                          title="Stop this chapter and keep its completed chunks so synthesis can continue later"
+                          aria-label="Stop chapter synthesis"
+                          data-testid="row-stop-synthesis"
+                        >
+                          <IconStop className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="icon"
+                          size="sm"
+                          onClick={() => setSynthesizeChapterId(chapter.id)}
+                          disabled={SYNTH_BUSY.includes(chapter.status) || chapter.synthesizable === false}
+                          title={
+                            chapter.synthesizable === false
+                              ? "No finished translation for this chapter"
+                              : SYNTH_BUSY.includes(chapter.status)
+                                ? "Can't re-synthesize while it's being processed"
+                                : "Pick a voice and synthesize this chapter's audio again, replacing the current audio"
+                          }
+                          aria-label="Re-synthesize chapter audio"
+                          data-testid="row-synthesize"
+                        >
+                          <IconRefresh className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="icon"
                         size="sm"

@@ -11,8 +11,9 @@ import { mkdir, rm, unlink } from "node:fs/promises";
 import path from "node:path";
 import type { WorkerUtils } from "graphile-worker";
 import { chapterChunkPreviewDir, chapterChunkPreviewUrlBase, listChapterChunkPreviews } from "../lib/chunk-previews.ts";
-import { buildSyncMapFromChunks, writeSyncMap } from "../lib/sync-map.ts";
+import { buildSyncMapFromChunks, syncMapPath, writeSyncMap } from "../lib/sync-map.ts";
 import { synthesisThroughput } from "../lib/synthesis-eta.ts";
+import { clearSynthesisAbort, registerSynthesisAbort } from "../lib/synthesis-registry.ts";
 
 export type SynthesizePayload = {
   chapterId: string;
@@ -24,33 +25,33 @@ export async function synthesize(payload: SynthesizePayload, { addJob: _addJob }
   const { chapterId, bookId, resume = false } = payload;
   const log = (msg: string) => appendLog(bookId, msg);
 
-  const [currentChapter] = await db.select().from(chapters).where(eq(chapters.id, chapterId));
-  if (currentChapter?.status === "suspended") {
-    await log(`[Ch ${(currentChapter.index ?? 0) + 1}] Skipped (suspended)`);
-    return;
-  }
-
-  const transitioned = await db
-    .update(chapters)
-    // On resume keep the prior progress (e.g. "313/322") until the script reports fresh numbers.
-    .set({ status: "synthesizing", error: null, ...(resume ? {} : { progress: null }) })
-    .where(and(eq(chapters.id, chapterId), ne(chapters.status, "suspended")))
-    .returning({ id: chapters.id });
-
-  if (transitioned.length === 0) {
-    await log(`[Ch ${(currentChapter?.index ?? 0) + 1}] Skipped (suspended)`);
-    return;
-  }
-
-  await db.update(books).set({ error: null, updatedAt: new Date() }).where(eq(books.id, bookId));
-
   let chPrefix = "";
   const chLog = (msg: string) => appendLog(bookId, chPrefix + msg);
-  const abortController = new AbortController();
+  const abortController = registerSynthesisAbort(chapterId);
   let cancelPoll: NodeJS.Timeout | null = null;
   let cancelCheckInFlight = false;
 
   try {
+    const [currentChapter] = await db.select().from(chapters).where(eq(chapters.id, chapterId));
+    if (currentChapter?.status === "suspended") {
+      await log(`[Ch ${(currentChapter.index ?? 0) + 1}] Skipped (suspended)`);
+      return;
+    }
+
+    const transitioned = await db
+      .update(chapters)
+      // On resume keep the prior progress (e.g. "313/322") until the script reports fresh numbers.
+      .set({ status: "synthesizing", error: null, ...(resume ? {} : { progress: null }) })
+      .where(and(eq(chapters.id, chapterId), ne(chapters.status, "suspended")))
+      .returning({ id: chapters.id });
+
+    if (transitioned.length === 0) {
+      await log(`[Ch ${(currentChapter?.index ?? 0) + 1}] Skipped (suspended)`);
+      return;
+    }
+
+    await db.update(books).set({ error: null, updatedAt: new Date() }).where(eq(books.id, bookId));
+
     const [chapter] = await db.select().from(chapters).where(eq(chapters.id, chapterId));
     if (!chapter) throw new Error(`Chapter ${chapterId} not found`);
     const text = chapter.customText ?? chapter.cleanText ?? chapter.rawText;
@@ -136,6 +137,8 @@ export async function synthesize(payload: SynthesizePayload, { addJob: _addJob }
       .from(chapters)
       .where(eq(chapters.id, chapterId));
     if (latestAfterSynth?.status === "suspended") {
+      await unlink(wavPath).catch(() => {});
+      await unlink(wavPath.replace(/\.wav$/, ".txt")).catch(() => {});
       await chLog("Stopped — cancelled by user");
       return;
     }
@@ -154,10 +157,9 @@ export async function synthesize(payload: SynthesizePayload, { addJob: _addJob }
     const syncMap = await buildSyncMapFromChunks(chunkPreviewDir, durationMs).catch(() => null);
     if (syncMap) {
       await writeSyncMap(m4aPath, syncMap);
-      await rm(chunkPreviewDir, { recursive: true, force: true }).catch(() => {});
     }
 
-    await db
+    const completed = await db
       .update(chapters)
       .set({
         audioPath: m4aPath,
@@ -170,7 +172,17 @@ export async function synthesize(payload: SynthesizePayload, { addJob: _addJob }
           at: new Date().toISOString(),
         },
       })
-      .where(eq(chapters.id, chapterId));
+      .where(and(eq(chapters.id, chapterId), ne(chapters.status, "suspended")))
+      .returning({ id: chapters.id });
+
+    if (completed.length === 0) {
+      await unlink(m4aPath).catch(() => {});
+      if (syncMap) await unlink(syncMapPath(m4aPath)).catch(() => {});
+      await chLog("Stopped — cancelled by user");
+      return;
+    }
+
+    if (syncMap) await rm(chunkPreviewDir, { recursive: true, force: true }).catch(() => {});
 
     const totalSec = Math.round(durationMs / 1000);
     const min = Math.floor(totalSec / 60);
@@ -190,11 +202,6 @@ export async function synthesize(payload: SynthesizePayload, { addJob: _addJob }
       await log("All queued chapters synthesized");
     }
   } catch (err) {
-    if (cancelPoll) {
-      clearInterval(cancelPoll);
-      cancelPoll = null;
-    }
-
     if (err instanceof TtsAbortedError) {
       // Keep `progress` (e.g. "313/322") so the UI can show how far we got and offer to continue.
       await db.update(chapters).set({ status: "suspended", error: null }).where(eq(chapters.id, chapterId));
@@ -203,8 +210,18 @@ export async function synthesize(payload: SynthesizePayload, { addJob: _addJob }
     }
 
     const message = err instanceof Error ? err.message : String(err);
+    const failed = await db.update(chapters)
+      .set({ status: "failed", error: message })
+      .where(and(eq(chapters.id, chapterId), ne(chapters.status, "suspended")))
+      .returning({ id: chapters.id });
+    if (failed.length === 0) {
+      await chLog("Stopped — cancelled by user");
+      return;
+    }
     await chLog(`Synthesis failed: ${message}`);
-    await db.update(chapters).set({ status: "failed", error: message }).where(eq(chapters.id, chapterId));
     throw err;
+  } finally {
+    if (cancelPoll) clearInterval(cancelPoll);
+    clearSynthesisAbort(chapterId, abortController);
   }
 }

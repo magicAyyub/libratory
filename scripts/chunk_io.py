@@ -5,6 +5,8 @@ as chunk-NNN.wav (and chunk-NNN.words.json where it times words) beside a chunks
 previews, resume and the sync map all read the same layout whatever engine spoke it.
 """
 
+from __future__ import annotations
+
 import json
 import os
 from pathlib import Path
@@ -19,10 +21,54 @@ def read_chunks(input_path: str) -> list[str]:
     return [chunk.strip() for chunk in text.split(CHUNK_SEPARATOR) if chunk.strip()]
 
 
-def write_chunk_manifest(chunks_dir: str, chunks: list[str]) -> None:
+def write_chunk_manifest(
+    chunks_dir: str,
+    chunks: list[str],
+    synthesis_texts: list[str] | None = None,
+) -> None:
     os.makedirs(chunks_dir, exist_ok=True)
-    manifest = [{"index": index, "text": chunk} for index, chunk in enumerate(chunks, start=1)]
-    with open(os.path.join(chunks_dir, "chunks.json"), "w", encoding="utf-8") as f:
+    if synthesis_texts is not None and len(synthesis_texts) != len(chunks):
+        raise ValueError("synthesis_texts must have the same number of entries as chunks")
+
+    manifest_path = os.path.join(chunks_dir, "chunks.json")
+    if synthesis_texts is not None:
+        try:
+            with open(manifest_path, encoding="utf-8") as f:
+                cached = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            cached = []
+
+        cached_by_index = {
+            entry["index"]: entry
+            for entry in cached
+            if isinstance(entry, dict) and isinstance(entry.get("index"), int)
+        } if isinstance(cached, list) else {}
+
+        keep = 0
+        while keep < len(chunks):
+            entry = cached_by_index.get(keep + 1)
+            if not entry or entry.get("text") != chunks[keep]:
+                break
+            old_synthesis_text = entry.get("synthesisText", entry["text"])
+            if old_synthesis_text != synthesis_texts[keep]:
+                break
+            keep += 1
+
+        for name in os.listdir(chunks_dir):
+            if name.startswith("chunk-") and (name.endswith(".wav") or name.endswith(".words.json")):
+                index_text = name[6:].removesuffix(".words.json").removesuffix(".wav")
+                if index_text.isdigit() and int(index_text) > keep:
+                    os.remove(os.path.join(chunks_dir, name))
+
+    manifest = [
+        {
+            "index": index,
+            "text": chunk,
+            **({"synthesisText": synthesis_texts[index - 1]} if synthesis_texts is not None else {}),
+        }
+        for index, chunk in enumerate(chunks, start=1)
+    ]
+    with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False)
 
 

@@ -4,6 +4,7 @@ import { mkdir, writeFile, readdir, rm } from "node:fs/promises";
 
 import { getDb, resetDb, row } from "../../test/setup.ts";
 import { books, chapters } from "../schema.ts";
+import { abortSynthesis, synthesisRunning } from "../lib/synthesis-registry.ts";
 
 vi.mock("../lib/tts.ts", () => {
   class TtsAbortedError extends Error {
@@ -42,14 +43,17 @@ vi.mock("../db.ts", async () => {
 });
 
 import { synthesize as synthesizeAudio, TtsAbortedError } from "../lib/tts.ts";
+import { encodeToM4a } from "../lib/ffmpeg.ts";
 import { synthesize as synthesizeWorker } from "./synthesize.ts";
 
 const mockSynthesizeAudio = vi.mocked(synthesizeAudio);
+const mockEncodeToM4a = vi.mocked(encodeToM4a);
 
 describe("synthesize worker", () => {
   beforeEach(async () => {
     await resetDb(getDb());
     mockSynthesizeAudio.mockReset();
+    mockEncodeToM4a.mockReset();
   });
 
   it("passes the stored voice to the generic dispatcher and marks the chapter done", async () => {
@@ -225,6 +229,95 @@ describe("synthesize worker", () => {
     const chapter = row(await db.select().from(chapters).where(eq(chapters.id, chapterId)));
     expect(chapter.status).toBe("suspended");
     expect(chapter.error).toBeNull();
+  });
+
+  it("aborts a running synthesis and leaves it suspended", async () => {
+    const db = getDb();
+    const bookId = crypto.randomUUID();
+    const chapterId = crypto.randomUUID();
+
+    await db.insert(books).values({
+      id: bookId,
+      title: "Book",
+      filename: "book.pdf",
+      pdfPath: "/tmp/book.pdf",
+    });
+    await db.insert(chapters).values({
+      id: chapterId,
+      bookId,
+      index: 0,
+      title: "Chapter 1",
+      rawText: "One.",
+      cleanText: "One.",
+    });
+
+    mockSynthesizeAudio.mockImplementation(async ({ signal }) => {
+      await new Promise<void>((_resolve, reject) => {
+        if (signal?.aborted) {
+          reject(new TtsAbortedError());
+          return;
+        }
+        signal?.addEventListener("abort", () => reject(new TtsAbortedError()), { once: true });
+      });
+    });
+
+    const running = synthesizeWorker({ bookId, chapterId }, { addJob: vi.fn() } as never);
+    await vi.waitFor(() => expect(synthesisRunning(chapterId)).toBe(true));
+    await db.update(chapters).set({ status: "suspended" }).where(eq(chapters.id, chapterId));
+    await abortSynthesis(chapterId);
+    await running;
+
+    const chapter = row(await db.select().from(chapters).where(eq(chapters.id, chapterId)));
+    expect(chapter.status).toBe("suspended");
+    expect(chapter.error).toBeNull();
+    expect(chapter.progress).toBeNull();
+
+    await rm(`/tmp/test-output-${bookId}`, { recursive: true, force: true });
+  });
+
+  it("does not mark a chapter done if stopped during audio conversion", async () => {
+    const db = getDb();
+    const bookId = crypto.randomUUID();
+    const chapterId = crypto.randomUUID();
+
+    await db.insert(books).values({
+      id: bookId,
+      title: "Book",
+      filename: "book.pdf",
+      pdfPath: "/tmp/book.pdf",
+    });
+    await db.insert(chapters).values({
+      id: chapterId,
+      bookId,
+      index: 0,
+      title: "Chapter 1",
+      rawText: "One.",
+      cleanText: "One.",
+    });
+
+    let finishEncoding: () => void = () => {};
+    mockSynthesizeAudio.mockResolvedValue(undefined);
+    mockEncodeToM4a.mockImplementation(async () => {
+      await new Promise<void>((resolve) => {
+        finishEncoding = resolve;
+      });
+    });
+
+    const running = synthesizeWorker({ bookId, chapterId }, { addJob: vi.fn() } as never);
+    await vi.waitFor(() => expect(mockEncodeToM4a).toHaveBeenCalled());
+    const stopping = (async () => {
+      await db.update(chapters).set({ status: "suspended" }).where(eq(chapters.id, chapterId));
+      await abortSynthesis(chapterId);
+    })();
+    finishEncoding();
+    await stopping;
+    await running;
+
+    const chapter = row(await db.select().from(chapters).where(eq(chapters.id, chapterId)));
+    expect(chapter.status).toBe("suspended");
+    expect(chapter.audioPath).toBeNull();
+
+    await rm(`/tmp/test-output-${bookId}`, { recursive: true, force: true });
   });
 
   it("passes the Meta MMS Bulgarian voice through to the dispatcher", async () => {

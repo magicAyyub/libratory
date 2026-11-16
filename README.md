@@ -261,6 +261,7 @@ Docker on a Mac cannot reach the GPU, so a container narrates Kokoro on the CPU;
 - **Japanese is not supported**, even though Kokoro ships Japanese voices. They need a MeCab/`fugashi` native stack plus a ~700 MB dictionary, and the extra downgrades a package the Marker/spaCy side depends on. Not worth it for five voices — so they aren't listed in the picker.
 - **Pocket TTS ships one checkpoint per language**, and only English is installed by `pnpm run setup`. The others download on demand: pick the language in the voice picker and press Download on the Pocket TTS notice — it shows the size first (~370 MB each, **~800 MB for French**, which has no distilled build yet and runs ~2.5x slower). Downloads land in the shared HuggingFace cache and go live immediately; no server restart.
 - **Pick the matching language.** The English model will happily read French or Italian text and produce something that sounds plausible, because the voices include non-English *speakers* (Giovanni, Lola, Juergen, Rafael, Estelle). It mispronounces silent letters and liaisons — the same French sentence runs 25% longer on the English model than the French one. Selecting the language is what makes it correct, not selecting a native-sounding voice.
+- **Pocket TTS chunking and French punctuation.** Pocket groups sentences from a paragraph into requests up to 1,000 characters, splitting at sentence boundaries; a single sentence longer than that is split at word boundaries. Blank lines remain pauses, while single line breaks are joined. French synthesis also uses straight apostrophes, drops French guillemets, turns spaced clause dashes and non-time colons into commas, removes spacing before punctuation such as `!` without changing the exclamation mark, and separates digits around a slash with spaces. Chapter text and read-along text remain unchanged.
 - Mandarin needs the `misaki[zh]` G2P chain, which `pyproject.toml` pins and `pnpm run setup` installs.
 
 </details>
@@ -374,7 +375,7 @@ pnpm test         # unit tests for both packages
 pnpm dev              # Start server + web in parallel
 pnpm dev:server       # Server only (port 3034)
 pnpm dev:web          # Web only (port 3033)
-pnpm db:up            # Start Postgres in Docker
+pnpm db:up            # Start Postgres in Docker and wait until it is healthy
 pnpm db:down          # Stop Postgres
 pnpm db:generate      # Generate Drizzle migration from schema changes
 pnpm db:migrate       # Apply migrations

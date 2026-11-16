@@ -268,6 +268,7 @@ function ChapterModalBody({
     : chapter.status === "synthesizing";
   // Partial audio exists, so "start over" and "carry on" are genuinely different actions here.
   const canContinueSynthesis = chapter.status === "suspended" || chapter.status === "failed";
+  const canStopSynthesis = !isVariant && chapter.status === "synthesizing";
   const wasAudioBusyRef = useRef(audioBusy);
   useEffect(() => {
     const was = wasAudioBusyRef.current;
@@ -300,6 +301,13 @@ function ChapterModalBody({
   });
 
   const resetTextMutation = trpc.chapters.resetText.useMutation({
+    onSuccess: () => {
+      utils.chapters.get.invalidate({ id: chapter.id });
+      utils.books.get.invalidate();
+    },
+  });
+
+  const stopSynthesisMutation = trpc.chapters.suspend.useMutation({
     onSuccess: () => {
       utils.chapters.get.invalidate({ id: chapter.id });
       utils.books.get.invalidate();
@@ -561,29 +569,44 @@ function ChapterModalBody({
               variant="primary"
               size="sm"
               onClick={() => onQueue(chapter.id, true)}
+              disabled={stopSynthesisMutation.isPending}
               title="Continue synthesis from where it stopped — keeps the chunks already synthesized"
             >
-              Continue{chapter.progress ? ` (${chapter.progress})` : ""}
+              {stopSynthesisMutation.isPending ? "Stopping..." : `Continue${chapter.progress ? ` (${chapter.progress})` : ""}`}
             </Button>
           ) : null}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => onPickVoice(chapter.id)}
-            disabled={SYNTH_BUSY.includes(chapter.status) || chapter.synthesizable === false}
-            title={
-              chapter.synthesizable === false
-                ? `No finished ${variantName} text for this chapter`
-                : SYNTH_BUSY.includes(chapter.status)
-                  ? "Can't re-synthesize while it's being processed"
-                  : canContinueSynthesis
-                    ? `Discard the ${chapter.progress ?? "already-synthesized"} chunks and synthesize the whole chapter again, with a voice you pick`
-                    : "Pick a voice and synthesize this chapter's audio from its text"
-            }
-            data-testid="chapter-synthesize"
-          >
-            {canContinueSynthesis ? "Start over" : "Re-synthesize"}
-          </Button>
+          {canStopSynthesis ? (
+            <Button
+              variant="danger"
+              soft
+              size="sm"
+              onClick={() => stopSynthesisMutation.mutate({ id: chapter.id })}
+              disabled={stopSynthesisMutation.isPending}
+              title="Stop this chapter and keep its completed chunks so synthesis can continue later"
+              data-testid="chapter-stop-synthesis"
+            >
+              {stopSynthesisMutation.isPending ? "Stopping..." : "Stop synthesis"}
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onPickVoice(chapter.id)}
+              disabled={stopSynthesisMutation.isPending || SYNTH_BUSY.includes(chapter.status) || chapter.synthesizable === false}
+              title={
+                chapter.synthesizable === false
+                  ? `No finished ${variantName} text for this chapter`
+                  : SYNTH_BUSY.includes(chapter.status)
+                    ? "Can't re-synthesize while it's being processed"
+                    : canContinueSynthesis
+                      ? `Discard the ${chapter.progress ?? "already-synthesized"} chunks and synthesize the whole chapter again, with a voice you pick`
+                      : "Pick a voice and synthesize this chapter's audio from its text"
+              }
+              data-testid="chapter-synthesize"
+            >
+              {canContinueSynthesis ? "Start over" : "Re-synthesize"}
+            </Button>
+          )}
 
           <Divider />
 

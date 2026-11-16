@@ -6,9 +6,8 @@ export type ChunkLimits = { maxChars: number; minChars: number };
 // A sentence per chunk, which is also the sync map's highlight unit for engines with no word timings
 export const SENTENCE_CHUNKS: ChunkLimits = { maxChars: 240, minChars: 40 };
 
-// The cloud voices time every word themselves, so a chunk need not be a sentence. A whole paragraph
-// up to this size is one request and reads as one breath; the cap bounds what a failed request
-// costs to redo, well under every provider's request limit.
+// Paragraph-sized requests keep sentences in one voice run. The cap bounds how much work a failed
+// request costs to redo; Pocket uses this too, while the cloud voices also time every word.
 export const PARAGRAPH_CHUNKS: ChunkLimits = { maxChars: 1000, minChars: 1000 };
 
 export function chunkTextForTts(text: string, limits: ChunkLimits): string[] {

@@ -6,7 +6,7 @@ import { rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { env } from "../env.ts";
-import { chunkTextForTts, SENTENCE_CHUNKS } from "./tts-chunks.ts";
+import { chunkTextForTts, PARAGRAPH_CHUNKS, SENTENCE_CHUNKS, type ChunkLimits } from "./tts-chunks.ts";
 import { dropStaleChunks } from "./chunk-previews.ts";
 import { synthesize as kokoroSynthesize, KokoroAbortedError } from "./kokoro.ts";
 import { resolveSayVoice } from "./say-voices.ts";
@@ -357,6 +357,7 @@ export async function synthesize({ inputText, outputPath, voice, speed, chunkPre
       backendName: "Pocket TTS",
       scriptPath: POCKET_SCRIPT,
       pythonBin: pocketPython(),
+      chunkLimits: PARAGRAPH_CHUNKS,
       inputText,
       outputPath,
       voice: await resolvePocketVoiceArg(resolved.voice),
@@ -462,16 +463,18 @@ async function synthesizeChunkedBackend({
   log = noopLog,
   onProgress = noopProgress,
   signal,
+  chunkLimits = SENTENCE_CHUNKS,
 }: SynthesizeOptions & {
   backendName: string;
   scriptPath: string;
   pythonBin?: string;
+  chunkLimits?: ChunkLimits;
   /** Said instead of a bare ENOENT when the engine's own venv was never built. */
   missingHint?: string;
   extraArgs?: string[];
   speedLabel?: string;
 }): Promise<void> {
-  const chunks = chunkTextForTts(inputText, SENTENCE_CHUNKS);
+  const chunks = chunkTextForTts(inputText, chunkLimits);
   if (chunks.length === 0) {
     throw new Error("Narrator input is empty after chunking");
   }

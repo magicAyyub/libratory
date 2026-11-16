@@ -3,7 +3,7 @@ import { z } from "zod";
 import { router, publicProcedure } from "../trpc.ts";
 import { db } from "../db.ts";
 import { books, chapters, type Chapter, type ChapterCleanup } from "../schema.ts";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { eq, and, inArray, ne, sql } from "drizzle-orm";
 import { appendLog } from "../lib/log.ts";
 import { quickAddJob } from "graphile-worker";
 import { env } from "../env.ts";
@@ -15,6 +15,7 @@ import { removeChapterArtifacts } from "../lib/chapter-artifacts.ts";
 import { queueIndexBook } from "../lib/search-index.ts";
 import { estimateSynthesisCost } from "../lib/synthesis-cost.ts";
 import { assertLaneVoiceUsable } from "../lib/lane-voice.ts";
+import { abortSynthesis, synthesisRunning } from "../lib/synthesis-registry.ts";
 
 const connectionString = env.DATABASE_URL;
 
@@ -106,6 +107,9 @@ export const chaptersRouter = router({
       const [chapter] = await db.select().from(chapters).where(eq(chapters.id, input.id));
       if (!chapter) throw new Error("Chapter not found");
 
+      if (synthesisRunning(input.id)) {
+        throw new Error("Chapter synthesis is still stopping");
+      }
       if (chapter.status === "synthesizing" || chapter.status === "normalizing") {
         throw new Error("Chapter is already being processed");
       }
@@ -140,19 +144,15 @@ export const chaptersRouter = router({
       const [chapter] = await db.select().from(chapters).where(eq(chapters.id, input.id));
       if (!chapter) throw new Error("Chapter not found");
 
-      if (chapter.status === "done") {
-        throw new Error("Cannot suspend a completed chapter");
-      }
-      if (chapter.status === "synthesizing" || chapter.status === "normalizing") {
-        throw new Error("Cannot suspend a chapter that is actively processing");
-      }
-
-      await db
+      const [suspended] = await db
         .update(chapters)
         .set({ status: "suspended", error: null })
-        .where(eq(chapters.id, input.id));
+        .where(and(eq(chapters.id, input.id), ne(chapters.status, "done")))
+        .returning({ bookId: chapters.bookId, index: chapters.index });
+      if (!suspended) throw new Error("Cannot suspend a completed chapter");
 
-      await appendLog(chapter.bookId, `[Ch ${chapter.index + 1}] Suspended`);
+      await abortSynthesis(input.id);
+      await appendLog(suspended.bookId, `[Ch ${suspended.index + 1}] Stopped`);
       return { success: true };
     }),
 

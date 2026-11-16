@@ -35,6 +35,12 @@ describe("chunkTextForTts", () => {
     expect(normalize(chunks.join(" "))).toBe(normalize(long));
   });
 
+  it("joins sentence units across single line breaks but keeps blank lines as chunk boundaries", () => {
+    expect(
+      chunkTextForTts("Première phrase.\nDeuxième phrase.\n\nNouveau paragraphe.", PARAGRAPH_CHUNKS),
+    ).toEqual(["Première phrase. Deuxième phrase.", "Nouveau paragraphe."]);
+  });
+
   it("falls back to splitting a sentence longer than the cap by words", () => {
     const text = "Това е много дълго изречение без естествена пауза ".repeat(18).trim();
 

@@ -2,6 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDb, resetDb, ensureGraphileTables, row } from "../../test/setup.ts";
 import { books, chapters, type ChapterCleanup } from "../schema.ts";
 import { eq } from "drizzle-orm";
+import { clearSynthesisAbort, registerSynthesisAbort } from "../lib/synthesis-registry.ts";
 
 const { mockQuickAddJob, mockDeepseekChat } = vi.hoisted(() => ({
   mockQuickAddJob: vi.fn(async () => {}),
@@ -53,7 +54,7 @@ async function insertFixture(
   return { bookId, chapterId };
 }
 
-describe("chapters router cleanup", () => {
+describe("chapters router", () => {
   beforeAll(async () => {
     await ensureGraphileTables(getDb());
   });
@@ -123,6 +124,30 @@ describe("chapters router cleanup", () => {
     const { chapterId } = await insertFixture(db, { cleanup: cleanupState("done") });
 
     await expect(caller.stopCleanup({ id: chapterId })).rejects.toThrow("not running");
+  });
+
+  it("suspend stops active synthesis and waits before allowing a requeue", async () => {
+    const db = getDb();
+    const { chapterId } = await insertFixture(db);
+    await db.update(chapters).set({ status: "synthesizing" }).where(eq(chapters.id, chapterId));
+    const controller = registerSynthesisAbort(chapterId);
+    let settled = false;
+    const stopping = caller.suspend({ id: chapterId }).then(() => {
+      settled = true;
+    });
+
+    try {
+      await vi.waitFor(() => expect(controller.signal.aborted).toBe(true));
+      const chapter = row(await db.select().from(chapters).where(eq(chapters.id, chapterId)));
+      expect(chapter.status).toBe("suspended");
+      await expect(caller.queue({ id: chapterId, resume: true })).rejects.toThrow("still stopping");
+      expect(settled).toBe(false);
+    } finally {
+      clearSynthesisAbort(chapterId, controller);
+    }
+
+    await stopping;
+    expect(settled).toBe(true);
   });
 
   it("cleanupSelected queues selected chapters, skipping done, running, and unselected ones", async () => {
