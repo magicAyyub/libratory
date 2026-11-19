@@ -19,10 +19,10 @@ are in `tasks/desktop-app.md`; this package is the part that exists.
 
 No checkout, no terminal. The app stages `scripts/`, `pyproject.toml` and `uv.lock` out of its own
 bundle into `~/Library/Application Support/Libratory`, downloads a pinned and checksummed `uv`,
-builds the Python environment from the lockfile, fetches Kokoro, starts Postgres in Docker and
+builds the Python environment from the lockfile, installs Pocket TTS, starts Postgres in Docker and
 then the server — which also serves the UI, so there is one port and no Vite.
 
-Measured from an empty directory: **1.4 GB of Python and PyTorch, plus the 347 MB Kokoro voice and
+Measured from an empty directory: **1.4 GB of Python and PyTorch, plus the Pocket TTS voice and
 the 644 MB Postgres image, then HTTP 200.** The environment it builds
 narrates a sentence.
 

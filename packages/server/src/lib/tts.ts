@@ -8,7 +8,6 @@ import path from "node:path";
 import { env } from "../env.ts";
 import { chunkTextForTts, PARAGRAPH_CHUNKS, SENTENCE_CHUNKS, type ChunkLimits } from "./tts-chunks.ts";
 import { dropStaleChunks } from "./chunk-previews.ts";
-import { synthesize as kokoroSynthesize, KokoroAbortedError } from "./kokoro.ts";
 import { resolveSayVoice } from "./say-voices.ts";
 import { cartesiaSynthesize, CartesiaAbortedError, findCartesiaVoice } from "./cartesia.ts";
 import { elevenlabsSynthesize, ElevenLabsAbortedError, findElevenLabsVoice } from "./elevenlabs.ts";
@@ -50,7 +49,7 @@ type SynthesizeOptions = {
 };
 
 type ParsedTtsVoice = {
-  engine: "kokoro" | "bg-mms" | "bg-bgtts" | "bg-piper" | "say" | "cartesia" | "elevenlabs" | "pocket" | "loudkit";
+  engine: "bg-mms" | "bg-bgtts" | "bg-piper" | "say" | "cartesia" | "elevenlabs" | "pocket" | "loudkit";
   voice: string;
   raw: string;
 };
@@ -83,12 +82,6 @@ const ADDED_PREVIEW_TEXT_BY_LANGUAGE: Record<string, string> = {
   nl: "Een wonderbare rust heeft bezit genomen van mijn hele ziel, zoals deze zoete lentemorgens die ik met heel mijn hart geniet.",
   sv: "En underbar sinnesro har tagit hela min själ i besittning, liksom dessa ljuva vårmorgnar som jag njuter av av hela mitt hjärta.",
   da: "En vidunderlig ro har taget hele min sjæl i besiddelse, ligesom disse søde forårsmorgener, som jeg nyder af hele mit hjerte.",
-};
-
-// Kokoro encodes the language in the voice prefix: a/b English, e Spanish, f French, h Hindi,
-// i Italian, p Portuguese, z Mandarin.
-const KOKORO_LANGUAGE_BY_PREFIX: Record<string, string> = {
-  a: "en", b: "en", e: "es", f: "fr", h: "hi", i: "it", p: "pt", z: "zh",
 };
 
 // Previews are cached on disk by voice id, so editing any string above would otherwise be invisible
@@ -131,7 +124,9 @@ const CARTESIA_VOICE_PATTERN = /^[A-Za-z0-9_-]{6,}$/;
 const ELEVENLABS_VOICE_PATTERN = /^[A-Za-z0-9]{16,}$/;
 // macOS `say` default speaking rate, scaled by the user's speed multiplier
 const SAY_BASE_RATE_WPM = 175;
-const KOKORO_VOICE_PATTERN = /^[a-z]{2}_[a-z]+$/;
+// Bare ids such as af_heart were Kokoro's, from before voice ids carried an engine
+const RETIRED_BARE_VOICE = /^[a-z]{2}_[a-z]+$/;
+const KOKORO_RETIRED = "Kokoro was removed — pick a Pocket TTS voice in the book's language";
 
 export class TtsAbortedError extends Error {
   constructor() {
@@ -144,6 +139,7 @@ export class TtsAbortedError extends Error {
 // "unsupported". Their recordings stay; only new synthesis is refused.
 const RETIRED_VOICES: Record<string, string> = {
   "bg-mlx:": "BG-TTS V5 (bg-mlx) was retired on 2026-10-06 — pick a BgTTS-38M voice for Bulgarian",
+  "kokoro:": KOKORO_RETIRED,
   "kugel:": "KugelAudio was retired on 2026-10-06 — pick a voice in the book's language",
 };
 
@@ -151,13 +147,6 @@ export function parseTtsVoice(rawVoice: string): ParsedTtsVoice {
   const retired = Object.entries(RETIRED_VOICES).find(([prefix]) => rawVoice.startsWith(prefix));
   if (retired) throw new Error(retired[1]);
 
-  if (rawVoice.startsWith("kokoro:")) {
-    const voice = rawVoice.slice("kokoro:".length);
-    if (!KOKORO_VOICE_PATTERN.test(voice)) {
-      throw new Error(`Unsupported voice ID: ${rawVoice}`);
-    }
-    return { engine: "kokoro", voice, raw: rawVoice };
-  }
 
   if (rawVoice.startsWith("bg-mms:")) {
     const voice = rawVoice.slice("bg-mms:".length);
@@ -223,15 +212,8 @@ export function parseTtsVoice(rawVoice: string): ParsedTtsVoice {
     return { engine: "loudkit", voice, raw: rawVoice };
   }
 
-  if (rawVoice.includes(":")) {
-    throw new Error(`Unsupported voice ID: ${rawVoice}`);
-  }
-
-  if (!KOKORO_VOICE_PATTERN.test(rawVoice)) {
-    throw new Error(`Unsupported voice ID: ${rawVoice}`);
-  }
-
-  return { engine: "kokoro", voice: rawVoice, raw: rawVoice };
+  if (RETIRED_BARE_VOICE.test(rawVoice)) throw new Error(KOKORO_RETIRED);
+  throw new Error(`Unsupported voice ID: ${rawVoice}`);
 }
 
 export async function getPreviewTextForVoice(voice: string, language: string | null = null): Promise<string> {
@@ -239,9 +221,6 @@ export async function getPreviewTextForVoice(voice: string, language: string | n
   if (language) {
     const text = previewTextFor(language);
     return resolved.engine === "elevenlabs" || resolved.engine === "loudkit" ? firstSentence(text) : text;
-  }
-  if (resolved.engine === "kokoro") {
-    return previewTextFor(KOKORO_LANGUAGE_BY_PREFIX[resolved.voice[0] ?? ""] ?? "en");
   }
   if (resolved.engine === "pocket") {
     const parsed = parsePocketVoice(resolved.voice);
@@ -272,18 +251,6 @@ export function voiceSupportsSpeed(voice: string): boolean {
 
 export async function synthesize({ inputText, outputPath, voice, speed, chunkPreviewDir = null, chunkPreviewUrlBase = null, log = noopLog, onProgress = noopProgress, signal }: SynthesizeOptions): Promise<void> {
   const resolved = parseTtsVoice(voice);
-
-  if (resolved.engine === "kokoro") {
-    try {
-      await kokoroSynthesize({ inputText, outputPath, voice: resolved.voice, speed, chunkPreviewDir, chunkPreviewUrlBase, log, onProgress, signal });
-      return;
-    } catch (error) {
-      if (error instanceof KokoroAbortedError) {
-        throw new TtsAbortedError();
-      }
-      throw error;
-    }
-  }
 
   if (resolved.engine === "cartesia") {
     try {

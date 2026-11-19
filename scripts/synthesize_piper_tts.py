@@ -7,7 +7,7 @@ ONNX on the CPU, ~20x realtime, and the one local Bulgarian engine with working 
 bg_speech still runs first for dates, currency and abbreviations, which espeak reads letter by letter.
 
 Every chunk also gets word timings from Piper's own phoneme durations (phoneme_words.py), written
-beside the chunk WAV as Kokoro's are, so the read-along lights words, not just sentences.
+beside the chunk WAV, so the read-along lights words, not just sentences.
 """
 
 import argparse

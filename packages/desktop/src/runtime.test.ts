@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { pending, readState, writeState } from "./runtime.cjs";
+import { pending, writeState } from "./runtime.cjs";
 
 const dirs: string[] = [];
 afterAll(async () => {
@@ -18,6 +18,8 @@ async function scratch(): Promise<{ resources: string; home: string }> {
   await mkdir(resources);
   await mkdir(home);
   await writeFile(path.join(resources, "uv.lock"), "version = 1\n");
+  await mkdir(path.join(resources, "scripts"));
+  await writeFile(path.join(resources, "scripts", "requirements-pocket.txt"), "pocket-tts==4.0.1\n");
   return { resources, home };
 }
 
@@ -27,15 +29,15 @@ describe("what a launch has to bring forward", () => {
     const p = pending(resources, home);
     expect(p.fresh).toBe(true);
     expect(p.python).toBe(true);
-    expect(p.models).toBe(true);
+    expect(p.pocket).toBe(true);
   });
 
   it("does nothing when the shipped lockfile is the one already installed", async () => {
     const { resources, home } = await scratch();
-    writeState(home, { ...pending(resources, home).want, essentialModels: true });
+    writeState(home, { ...pending(resources, home).want });
     const p = pending(resources, home);
     expect(p.python).toBe(false);
-    expect(p.models).toBe(false);
+    expect(p.pocket).toBe(false);
     expect(p.fresh).toBe(false);
   });
 
@@ -43,12 +45,12 @@ describe("what a launch has to bring forward", () => {
   // 2.4 GB environment beside it is still the previous release's.
   it("asks for a Python sync when a new release ships a different lockfile", async () => {
     const { resources, home } = await scratch();
-    writeState(home, { ...pending(resources, home).want, essentialModels: true });
+    writeState(home, { ...pending(resources, home).want });
     await writeFile(path.join(resources, "uv.lock"), "version = 2\n");
     const p = pending(resources, home);
     expect(p.python).toBe(true);
     expect(p.fresh).toBe(false);
-    expect(p.models).toBe(false);
+    expect(p.pocket).toBe(false);
   });
 
   // An interrupted update must repeat, not be skipped
@@ -59,16 +61,14 @@ describe("what a launch has to bring forward", () => {
     expect(pending(resources, home).python).toBe(true);
     writeState(home, pending(resources, home).want);
     expect(pending(resources, home).python).toBe(false);
-    expect(readState(home).essentialModels).toBeUndefined();
   });
 
   // A Mac that installed a release before Piper existed has no piperLock at all: updating must
   // install Piper without touching the 2.4 GB environment, and a later pin change reinstalls it
   it("installs Piper on an update that adds it, and again when its pins change", async () => {
     const { resources, home } = await scratch();
-    await mkdir(path.join(resources, "scripts"));
     await writeFile(path.join(resources, "scripts", "requirements-piper.txt"), "piper-tts==1.8.0\n");
-    writeState(home, { pythonLock: pending(resources, home).want.pythonLock, essentialModels: true });
+    writeState(home, { pythonLock: pending(resources, home).want.pythonLock });
 
     const before = pending(resources, home);
     expect(before.piper).toBe(true);

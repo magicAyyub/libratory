@@ -43,11 +43,6 @@ vi.mock("node:readline", () => ({
   }),
 }));
 
-vi.mock("./kokoro.ts", () => ({
-  synthesize: vi.fn(async () => {}),
-  KokoroAbortedError: class KokoroAbortedError extends Error {},
-}));
-
 import { synthesize } from "./tts.ts";
 
 describe("tts MMS dispatcher", () => {

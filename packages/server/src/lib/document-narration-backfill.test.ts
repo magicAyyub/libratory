@@ -34,7 +34,7 @@ describe("backfillDocumentNarration", () => {
     const ch = row(
       await db
         .insert(chapters)
-        .values({ bookId: book.id, index: 0, title: "I", rawText: "One two.", status: "done", audioPath: await recording(dir, "ch000", 4000, true), durationMs: 4000, synthesizedWith: { voice: "kokoro:af_heart" } })
+        .values({ bookId: book.id, index: 0, title: "I", rawText: "One two.", status: "done", audioPath: await recording(dir, "ch000", 4000, true), durationMs: 4000, synthesizedWith: { voice: "pocket:alba" } })
         .returning(),
     );
     await db.insert(chapterVariants).values({
@@ -54,10 +54,10 @@ describe("backfillDocumentNarration", () => {
 
     expect(await backfillDocumentNarration()).toBe(4);
     const narrationOf = async (id: string) => (await db.select({ n: documents.narration }).from(documents).where(eq(documents.id, id)))[0]?.n;
-    expect(await narrationOf(sync.id)).toEqual({ original: { level: "word", durationMs: 4000, voice: "Heart" }, translation: null });
+    expect(await narrationOf(sync.id)).toEqual({ original: { level: "word", durationMs: 4000, voice: "Alba" }, translation: null });
     expect(await narrationOf(translated.id)).toEqual({ original: null, translation: { level: "chunk", durationMs: 6000, voice: "Samantha" } });
     expect(await narrationOf(bilingual.id)).toEqual({
-      original: { level: "word", durationMs: 4000, voice: "Heart" },
+      original: { level: "word", durationMs: 4000, voice: "Alba" },
       translation: { level: "chunk", durationMs: 6000, voice: "Samantha" },
     });
     expect(await narrationOf(textOnly.id)).toEqual({ original: null, translation: null });

@@ -1,8 +1,8 @@
+import { env } from "../env.ts";
 import { voiceHasWordTiming } from "./voice-catalog.ts";
 import {
   cartesiaVoiceToEntry,
   elevenlabsVoiceToEntry,
-  kokoroVoiceGroups,
   languageOfStaticVoice,
   loudkitVoices,
   narratorVoices,
@@ -75,7 +75,6 @@ export async function listAllVoices(filter: { language?: string; engine?: VoiceE
     engine,
   });
   const voices = [
-    ...kokoroVoiceGroups.flatMap((g) => g.voices).map(tagged("kokoro")),
     ...narratorVoices.map(tagged("narrators")),
     ...loudkitVoices.map(tagged("loudkit")),
     ...pocketLanguages
@@ -93,6 +92,7 @@ export async function listAllVoices(filter: { language?: string; engine?: VoiceE
   return voices
     .filter(
       ({ voice, engine }) =>
+        !env.HIDDEN_VOICE_ENGINES.includes(engine) &&
         (voice.requiresEngine === undefined || engines[voice.requiresEngine]) &&
         (filter.engine === undefined || engine === filter.engine) &&
         (language === undefined || voiceCoversLanguage(voice, language)),

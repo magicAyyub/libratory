@@ -48,7 +48,7 @@ Postgres has no Bulgarian stemmer, and the English stemmer mangles Cyrillic unpr
 
 **What an embedding is:** a small neural net (BGE-M3, 568M params, MIT license, ~2.2GB) reads text and outputs 1,024 numbers — a coordinate in "meaning space" where similar meanings land close together *across languages* (an English sentence and its Bulgarian translation measure ~0.93 cosine similarity). Search = embed the query, fetch nearest chunks. Everything runs locally; no text leaves the machine.
 
-**The runner:** a lazy singleton Python child process (same conda env and spawn pattern as kokoro TTS: `HF_HUB_OFFLINE=1`, `PYTORCH_ENABLE_MPS_FALLBACK=1`), speaking JSON-lines over stdin/stdout: `{id, texts[]} → {id, vectors[][]}` (dense, normalized). Model load takes seconds — hence long-lived, with idle-kill after 5 min and restart-on-crash. Timeouts: 5 min per batch (indexing), 20s per query (chat). **Graceful degradation:** if the embedder is down/slow, `embedQuery()` returns null and search runs FTS-only — the chat tool tells the model so, and nothing blocks.
+**The runner:** a lazy singleton Python child process (same conda env and spawn pattern as the TTS scripts: `HF_HUB_OFFLINE=1`, `PYTORCH_ENABLE_MPS_FALLBACK=1`), speaking JSON-lines over stdin/stdout: `{id, texts[]} → {id, vectors[][]}` (dense, normalized). Model load takes seconds — hence long-lived, with idle-kill after 5 min and restart-on-crash. Timeouts: 5 min per batch (indexing), 20s per query (chat). **Graceful degradation:** if the embedder is down/slow, `embedQuery()` returns null and search runs FTS-only — the chat tool tells the model so, and nothing blocks.
 
 ## Hybrid retrieval (`lib/search.ts`)
 

@@ -55,7 +55,7 @@ export function cueIndexAt(cues: ReaderCue[], ms: number): number {
       low = mid + 1;
     }
   }
-  // Before the first word (Kokoro's can start 275ms in) and in the gaps between cues, one stays lit
+  // Before the first word (a voice can start some 275ms in) and in the gaps between cues, one stays lit
   return found >= 0 ? found : cues.length > 0 ? 0 : -1;
 }
 

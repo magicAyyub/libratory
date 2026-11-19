@@ -213,7 +213,6 @@ describe("/mcp", () => {
     const client = await connect(await listen());
     const all = parse(await client.callTool({ name: "list_voices", arguments: {} }));
     const ids = all.map((v: { id: string }) => v.id);
-    expect(ids).toContain("kokoro:af_heart");
     expect(ids).toContain("bg-mms:bul");
     expect(ids).toContain("say:daria");
     expect(ids).toContain("cartesia:abc123");
@@ -221,14 +220,14 @@ describe("/mcp", () => {
     const bulgarian = parse(await client.callTool({ name: "list_voices", arguments: { language: "bg" } }));
     const bgIds = bulgarian.map((v: { id: string }) => v.id);
     expect(bgIds).toEqual(expect.arrayContaining(["bg-mms:bul", "bg-piper:dimitar", "say:daria", "cartesia:abc123"]));
-    expect(bgIds).not.toContain("kokoro:af_heart");
+    expect(bgIds).not.toContain("loudkit:clara");
     expect(bulgarian.find((v: { id: string }) => v.id === "cartesia:abc123")).toMatchObject({ cloud: true, gender: "F", engine: "cartesia", native: true });
     // Listed because the model reads Bulgarian, flagged because the voice was made for English
     expect(bulgarian.find((v: { id: string }) => v.id === "elevenlabs:el1")).toMatchObject({ language: "en", native: false });
     // An engine whose env setup never built is not offered
     expect(bgIds).toContain("bg-piper:dimitar");
     expect(bgIds).not.toContain("bg-bgtts:female");
-    expect(all.find((v: { id: string }) => v.id === "kokoro:af_heart")).toMatchObject({ native: null });
+    expect(all.find((v: { id: string }) => v.id === "bg-mms:bul")).toMatchObject({ native: null });
   });
 
   it("reports capabilities an agent can act on", async () => {

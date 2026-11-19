@@ -16,6 +16,12 @@ const workerConcurrency = z.coerce.number().int().positive().optional().catch(un
 const envSchema = z.object({
   DATABASE_URL: z.string(),
   DATA_DIR: z.string().default("./data"),
+  // Narrator a new book starts with until one is picked for it
+  DEFAULT_VOICE: z.string().default("pocket:fr:estelle"),
+  // Voice engines left out of the picker, comma-separated (say, pocket…). Hiding is not removal:
+  // a book already set to one of these voices still synthesizes with it.
+  HIDDEN_VOICE_ENGINES: z.string().default("say").transform((value) =>
+    value.split(",").map((engine) => engine.trim()).filter(Boolean)),
   PORT: z.coerce.number().default(3034),
   // Vite's port. Under `pnpm dev` a browser that lands on the API port is sent there, rather than
   // being handed whatever `pnpm build` last left in web/dist.

@@ -20,6 +20,7 @@ function wanted(resources) {
   return {
     pythonLock: hashOf(path.join(resources, "uv.lock")),
     piperLock: hashOf(path.join(resources, "scripts", "requirements-piper.txt")),
+    pocketLock: hashOf(path.join(resources, "scripts", "requirements-pocket.txt")),
   };
 }
 
@@ -46,7 +47,7 @@ function pending(resources, home) {
     // No recorded state at all is a first run, which needs the same work for a different reason
     python: want.pythonLock !== have.pythonLock,
     piper: want.piperLock !== have.piperLock,
-    models: !have.essentialModels,
+    pocket: want.pocketLock !== have.pocketLock,
     fresh: have.pythonLock === undefined,
   };
 }

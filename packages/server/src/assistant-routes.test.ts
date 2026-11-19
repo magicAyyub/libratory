@@ -249,17 +249,17 @@ describe("POST /assistant", () => {
 
   it("holds a call that changes something until the person says Run, then goes on in the same answer", async () => {
     const { id, bookId, post } = await setup();
-    resolveLlm.mockResolvedValue({ model: scriptedModel([{ tool: "set_book_settings", input: { id: bookId, voice: "kokoro:af_bella" } }, { text: "Voice changed." }]), def });
+    resolveLlm.mockResolvedValue({ model: scriptedModel([{ tool: "set_book_settings", input: { id: bookId, voice: "pocket:jane" } }, { text: "Voice changed." }]), def });
     expect((await post("/assistant", { text: "Use Bella" })).statusCode).toBe(200);
     // Nothing ran: the card is waiting
-    expect((await bookTitle(bookId))?.voice).not.toBe("kokoro:af_bella");
+    expect((await bookTitle(bookId))?.voice).not.toBe("pocket:jane");
     let [, answer] = await loadMessages(id);
     const [request] = toolParts(answer);
     expect(request?.state).toBe("approval-requested");
     expect(request?.approval?.id).toBeTruthy();
 
     expect((await post("/assistant", { trigger: "approval", approvalId: request!.approval!.id, approved: true })).statusCode).toBe(200);
-    expect((await bookTitle(bookId))?.voice).toBe("kokoro:af_bella");
+    expect((await bookTitle(bookId))?.voice).toBe("pocket:jane");
     const history = await loadMessages(id);
     // One answer, continued in place: the call, its result, then the words
     expect(history).toHaveLength(2);
@@ -272,7 +272,7 @@ describe("POST /assistant", () => {
   it("answers every card of one turn in one request: the approved one runs, the cancelled one does not", async () => {
     const { id, bookId, post } = await setup();
     resolveLlm.mockResolvedValue({ model: scriptedModel([
-      { calls: [{ tool: "set_book_settings", input: { id: bookId, voice: "kokoro:af_bella" } }, { tool: "set_book_settings", input: { id: bookId, speed: 1.5 } }] },
+      { calls: [{ tool: "set_book_settings", input: { id: bookId, voice: "pocket:jane" } }, { tool: "set_book_settings", input: { id: bookId, speed: 1.5 } }] },
       { text: "Done what was allowed." },
     ]), def });
     expect((await post("/assistant", { text: "Bella, faster" })).statusCode).toBe(200);
@@ -282,7 +282,7 @@ describe("POST /assistant", () => {
     const approvals = [{ id: voiceCard!.approval!.id, approved: true }, { id: speedCard!.approval!.id, approved: false }];
     expect((await post("/assistant", { trigger: "approval", approvals })).statusCode).toBe(200);
     const book = (await getDb().select({ voice: books.voice, speed: books.speed }).from(books).where(eq(books.id, bookId)))[0];
-    expect(book?.voice).toBe("kokoro:af_bella");
+    expect(book?.voice).toBe("pocket:jane");
     expect(book?.speed).not.toBe(1.5);
     const [ran, refused] = toolParts((await loadMessages(id))[1]);
     expect(ran?.state).toBe("output-available");
@@ -292,7 +292,7 @@ describe("POST /assistant", () => {
   it("a cancelled card runs nothing, and a card walked past is refused on the person's behalf", async () => {
     const { id, bookId, post } = await setup();
     resolveLlm.mockResolvedValue({ model: scriptedModel([
-      { tool: "set_book_settings", input: { id: bookId, voice: "kokoro:af_bella" } },
+      { tool: "set_book_settings", input: { id: bookId, voice: "pocket:jane" } },
       { text: "Left as it was." },
       { tool: "cancel_book", input: { id: bookId } },
       { text: "Something else." },
@@ -300,7 +300,7 @@ describe("POST /assistant", () => {
     await post("/assistant", { text: "Use Bella" });
     const first = toolParts((await loadMessages(id))[1])[0]!;
     expect((await post("/assistant", { trigger: "approval", approvalId: first.approval!.id, approved: false })).statusCode).toBe(200);
-    expect((await bookTitle(bookId))?.voice).not.toBe("kokoro:af_bella");
+    expect((await bookTitle(bookId))?.voice).not.toBe("pocket:jane");
     expect(toolParts((await loadMessages(id))[1])[0]?.state).toBe("output-denied");
 
     // A second card, then a new question instead of an answer to it

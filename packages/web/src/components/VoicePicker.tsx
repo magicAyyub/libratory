@@ -5,7 +5,6 @@ import {
   elevenlabsVoiceToEntry,
   engineForVoiceId,
   getVoiceLabel,
-  normalizeVoiceId,
   pocketCustomVoiceToEntry,
   pocketVoiceToEntry,
   sayVoiceToEntry,
@@ -60,7 +59,7 @@ function pocketLanguageOf(voiceId: string): string {
 function useVoiceLibrary(value: string, onChange: (voice: string) => void, priorityLanguages: string[]) {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const selectedId = normalizeVoiceId(value);
+  const selectedId = value;
   const label = useVoiceLabel(selectedId);
 
   const close = useCallback(() => {

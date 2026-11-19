@@ -11,11 +11,6 @@ vi.mock("./elevenlabs.ts", () => ({
   findElevenLabsVoice: vi.fn(async () => null),
 }));
 
-vi.mock("./kokoro.ts", () => ({
-  synthesize: vi.fn(async () => {}),
-  KokoroAbortedError: class KokoroAbortedError extends Error {},
-}));
-
 import { parseTtsVoice, synthesize, TtsAbortedError, voiceSupportsSpeed } from "./tts.ts";
 
 describe("tts ElevenLabs dispatcher", () => {

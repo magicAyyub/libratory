@@ -231,8 +231,8 @@ async function boot() {
 
 // One list, in order, sent to the window so it can draw itself — the ids used to be written out
 // again in first-run.html and agreed only by hand. A step throws to block; the runner marks the
-// step that actually failed, so a Kokoro failure no longer paints its error next to "Python" and
-// leaves "Kokoro voice" spinning forever.
+// step that actually failed, so a voice failure no longer paints its error next to "Python" and
+// leaves the voice step spinning forever.
 const STEPS = [
   {
     id: "system",
@@ -294,12 +294,12 @@ const STEPS = [
   },
   {
     id: "voice",
-    label: "Kokoro voice",
+    label: "Pocket TTS voice",
     async run(ctx, detail) {
-      if (!ctx.pending.models) return "up to date";
-      detail("Downloading the Kokoro voice — 347 MB");
-      await setup.fetchEssentialModels(ctx.python, HOME, () => {});
-      runtime.writeState(HOME, { essentialModels: true });
+      if (!ctx.pending.pocket) return "up to date";
+      detail("Installing Pocket TTS and its French voice — about 2 GB, once");
+      await setup.syncPocket(HOME, (line) => detail(line.trim().split("\n").at(-1)));
+      runtime.writeState(HOME, { pocketLock: ctx.pending.want.pocketLock });
     },
   },
   {

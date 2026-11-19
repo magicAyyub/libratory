@@ -5,7 +5,7 @@ type Book = Parameters<typeof stageReached>[0];
 
 function book(overrides: Partial<Book> = {}): Book {
   return {
-    id: "b", title: "t", author: null, kind: "pdf", status: "done", error: null, voice: "kokoro:af_heart", speed: 1,
+    id: "b", title: "t", author: null, kind: "pdf", status: "done", error: null, voice: "pocket:alba", speed: 1,
     language: null, searchIndex: null, folderId: null, totalWords: 0, totalDurationMs: 0, outputPath: "/out/book.m4b", downloadUrl: "/download/b",
     assembleQueued: false, files: [{ index: 0, filename: "a.pdf", status: "done", hasRawText: true, rawWords: 10, error: null }],
     chapters: [{ id: "c", index: 0, title: "One", status: "done", selected: true, wordCount: 10, pageStart: 1, pageEnd: 2, durationMs: 1000, hasAudio: true, error: null }],

@@ -11,20 +11,9 @@ vi.mock("./cartesia.ts", () => ({
 import { getPreviewTextForVoice, parseTtsVoice, previewFileBase, previewLanguageFor, voiceSupportsSpeed } from "./tts.ts";
 
 describe("parseTtsVoice", () => {
-  it("treats legacy Kokoro voice ids as Kokoro", () => {
-    expect(parseTtsVoice("af_heart")).toEqual({
-      engine: "kokoro",
-      voice: "af_heart",
-      raw: "af_heart",
-    });
-  });
-
-  it("parses prefixed Kokoro voice ids", () => {
-    expect(parseTtsVoice("kokoro:bf_emma")).toEqual({
-      engine: "kokoro",
-      voice: "bf_emma",
-      raw: "kokoro:bf_emma",
-    });
+  it("says Kokoro was removed for voices a book may still carry", () => {
+    expect(() => parseTtsVoice("af_heart")).toThrow(/kokoro was removed/i);
+    expect(() => parseTtsVoice("kokoro:bf_emma")).toThrow(/kokoro was removed/i);
   });
 
   it("parses the Meta MMS Bulgarian voice", () => {
@@ -118,12 +107,11 @@ describe("parseTtsVoice", () => {
     expect(() => parseTtsVoice("bg-piper:")).toThrow(/unsupported voice/i);
     expect(() => parseTtsVoice("say:")).toThrow(/unsupported voice/i);
     expect(() => parseTtsVoice("say:Daria (Enhanced)")).toThrow(/unsupported voice/i);
-    expect(() => parseTtsVoice("kokoro:")).toThrow(/unsupported voice/i);
     expect(() => parseTtsVoice("pocket:")).toThrow(/unsupported voice/i);
     expect(() => parseTtsVoice("pocket:not-a-catalog-voice")).toThrow(/unsupported voice/i);
   });
 
-  it("rejects malformed legacy Kokoro voice ids", () => {
+  it("rejects malformed voice ids", () => {
     expect(() => parseTtsVoice("")).toThrow(/unsupported voice/i);
     expect(() => parseTtsVoice("../../voice")).toThrow(/unsupported voice/i);
   });
@@ -134,8 +122,8 @@ describe("getPreviewTextForVoice", () => {
     expect(await getPreviewTextForVoice("bg-mms:bul")).toMatch(/пролетна|утрин/i);
   });
 
-  it("returns an English sample for Kokoro voices", async () => {
-    expect(await getPreviewTextForVoice("kokoro:af_heart")).toMatch(/quick brown fox/i);
+  it("returns an English sample for English Pocket voices", async () => {
+    expect(await getPreviewTextForVoice("pocket:alba")).toMatch(/quick brown fox/i);
   });
 
   it("falls back to English for a say voice that is not installed", async () => {
@@ -171,10 +159,6 @@ describe("voiceSupportsSpeed", () => {
     expect(voiceSupportsSpeed("pocket:alba")).toBe(false);
   });
 
-  it("keeps speed control enabled for Kokoro", () => {
-    expect(voiceSupportsSpeed("af_heart")).toBe(true);
-  });
-
   it("enables speed control for the macOS say voice", () => {
     expect(voiceSupportsSpeed("say:daria-enhanced")).toBe(true);
   });
@@ -188,7 +172,7 @@ describe("previewLanguageFor", () => {
   it("previews an ElevenLabs voice in the language it is listed under, and nothing else in another", () => {
     expect(previewLanguageFor("elevenlabs:JBFqnCBsd6RMkjVDRZzb", "bg")).toBe("bg");
     expect(previewLanguageFor("elevenlabs:JBFqnCBsd6RMkjVDRZzb", "xx")).toBeNull();
-    expect(previewLanguageFor("kokoro:af_heart", "bg")).toBeNull();
+    expect(previewLanguageFor("pocket:alba", "bg")).toBeNull();
     expect(previewFileBase("elevenlabs:abc", "bg")).not.toBe(previewFileBase("elevenlabs:abc"));
   });
 

@@ -17,7 +17,7 @@ import {
 
 describe("voiceLabel", () => {
   it("names catalog voices by their label and runtime voices from the id", () => {
-    expect(voiceLabel("kokoro:af_heart")).toBe("Heart");
+    expect(voiceLabel("kokoro:af_heart")).toBe("Kokoro (retired)");
     expect(voiceLabel("bg-piper:dimitar")).toBe("Dimitar (Piper)");
     expect(voiceLabel("pocket:alba")).toBe("Alba");
     expect(voiceLabel("pocket:it:giovanni")).toBe("Giovanni");
@@ -59,10 +59,10 @@ describe("laneFromRecordings", () => {
     await writeFile(b.replace(".m4a", ".sync.json"), JSON.stringify({ version: 1, totalMs: 6000, chunks: [{ text: "Three.", startMs: 0, endMs: 6000 }] }));
 
     const lane = await laneFromRecordings([
-      { audioPath: a, durationMs: 4000, voice: "kokoro:af_heart" },
-      { audioPath: b, durationMs: null, voice: "kokoro:af_heart" },
+      { audioPath: a, durationMs: 4000, voice: "pocket:alba" },
+      { audioPath: b, durationMs: null, voice: "pocket:alba" },
     ]);
-    expect(lane).toEqual({ level: "sentence", durationMs: 10000, voice: "Heart" });
+    expect(lane).toEqual({ level: "sentence", durationMs: 10000, voice: "Alba" });
     expect(await laneFromRecordings([])).toBeNull();
   });
 
@@ -88,9 +88,9 @@ describe("narrationSummary", () => {
 
   it("names a voice once when both lanes used it", () => {
     expect(narrationSummary({
-      original: { level: "chunk", durationMs: 1, voice: "Heart" },
-      translation: { level: "chunk", durationMs: 1, voice: "Heart" },
-    }).voice).toBe("Heart");
+      original: { level: "chunk", durationMs: 1, voice: "Alba" },
+      translation: { level: "chunk", durationMs: 1, voice: "Alba" },
+    }).voice).toBe("Alba");
   });
 });
 

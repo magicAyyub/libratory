@@ -88,7 +88,7 @@ test("UC8: an EPUB with no read-along layer says so instead of failing obscurely
   await expect(page.getByTestId("reader-open-error")).toContainText(/no read-along layer/);
 });
 
-// marker_single and Kokoro both run for real here — full tier only (pnpm e2e:full)
+// marker_single and Pocket TTS both run for real here — full tier only (pnpm e2e:full)
 test.describe("read along on the page", { tag: "@slow" }, () => {
   test("UC8: the spoken sentence is highlighted on the PDF page, and tapping one seeks to it", async ({ page }) => {
     test.setTimeout(20 * 60_000);
@@ -144,8 +144,8 @@ test.describe("read along on the page", { tag: "@slow" }, () => {
 
     await page.getByTestId("book-read-link").click();
 
-    // Kokoro reports per-word timings, so a cue is a sentence rather than a whole chunk
-    await expect(page.getByTestId("reader-granularity")).toHaveText("word");
+    // Pocket TTS has no word timings, so the reader follows its chunks
+    await expect(page.getByTestId("reader-granularity")).toHaveText("chunk");
 
     const rect = page.getByTestId("cue-rect").first();
     await expect(rect).toBeVisible();

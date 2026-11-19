@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { env } from "../env.ts";
 import { router, publicProcedure } from "../trpc.ts";
 import {
   POCKET_VOICES,
@@ -14,6 +15,10 @@ import {
   startPocketLanguageDownload,
 } from "../lib/pocket-languages.ts";
 import { deleteCustomPocketVoice, listCustomPocketVoices } from "../lib/pocket-voices.ts";
+
+export const voiceSettingsRouter = router({
+  hiddenEngines: publicProcedure.query(() => env.HIDDEN_VOICE_ENGINES),
+});
 
 export const pocketVoicesRouter = router({
   list: publicProcedure.query(async () => {

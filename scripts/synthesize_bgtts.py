@@ -3,14 +3,14 @@
 
 Runs in its own venv (.venv-bgtts): MioCodec needs torchaudio, which stops at 2.9.x while the main
 env pins torch 2.13. CPU by default — measured ~11x realtime on an M-series Mac, so the GPU buys
-little and stays free for Kokoro and BGE-M3.
+little and stays free for BGE-M3.
 
 The model's code ships in the HF repo beside the weights, so it is imported from the pinned
 snapshot rather than vendored. The three voices are the reference clips the authors ship; the
 speaker embedding is taken from them at load.
 
 Word timings come from the model's own cross-attention over the codes it produced
-(attention_words.py), written beside each chunk WAV as Piper's and Kokoro's are.
+(attention_words.py), written beside each chunk WAV as Piper's are.
 """
 
 import argparse

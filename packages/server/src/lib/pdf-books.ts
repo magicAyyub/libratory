@@ -67,7 +67,7 @@ export async function createPdfBook(bookId: string, input: CreatePdfBookInput, p
   if (!firstFile) throw new PdfBookInputError("No PDF files uploaded");
 
   const title = input.title?.trim() || firstFile.filename.replace(/\.pdf$/i, "").replace(/[_-]/g, " ");
-  const voice = input.voice ?? "kokoro:af_heart";
+  const voice = input.voice ?? env.DEFAULT_VOICE;
   parseTtsVoice(voice);
   const speed = input.speed ?? 1.0;
   const chapterModel = canonicalKey(input.chapterModel?.trim().slice(0, 64) ?? "") || null;

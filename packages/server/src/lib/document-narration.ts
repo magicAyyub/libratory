@@ -5,7 +5,7 @@ import { cuesFromSyncMap } from "./cues.ts";
 import type { CueGranularity } from "./reader-format.ts";
 import { readSyncMap } from "./sync-map.ts";
 import { POCKET_NATIVE_VOICES, POCKET_VOICES } from "./pocket.ts";
-import { kokoroVoiceGroups, narratorVoices, normalizeVoiceId } from "./voice-catalog.ts";
+import { narratorVoices } from "./voice-catalog.ts";
 
 // What a shelf row says about a file's narration — the level the reader can light, the running
 // time, the voices — computed once when the export is written and kept on the documents row,
@@ -22,11 +22,7 @@ function titleCase(slug: string): string {
 // are a process or an API away and a label is not worth that on every export.
 export function voiceLabel(voiceId: string | null | undefined): string | null {
   if (!voiceId) return null;
-  const id = normalizeVoiceId(voiceId);
-  for (const group of kokoroVoiceGroups) {
-    const found = group.voices.find((v) => v.id === id);
-    if (found) return found.label;
-  }
+  const id = voiceId;
   const narrator = narratorVoices.find((v) => v.id === id);
   if (narrator) return narrator.label;
   const [engine, ...rest] = id.split(":");
@@ -35,6 +31,8 @@ export function voiceLabel(voiceId: string | null | undefined): string | null {
     case "pocket":
       if (rest[0] === "custom") return "Cloned voice";
       return [...POCKET_VOICES, ...Object.values(POCKET_NATIVE_VOICES).flat()].find((v) => v.id === tail)?.name ?? titleCase(tail);
+    case "kokoro":
+      return "Kokoro (retired)";
     case "cartesia":
       return "Cartesia voice";
     case "say":

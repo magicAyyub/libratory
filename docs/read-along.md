@@ -131,7 +131,7 @@ Says what a highlight actually means, so a reader can be honest about it:
 | `sentence` | some chunks carried word timings and became sentences; the rest are whole chunks |
 | `chunk` | no word timings — one highlight is a whole synthesis chunk, often a paragraph |
 
-Kokoro reports word timings during synthesis. Piper reports them too, from its phoneme durations
+Piper reports word timings from its phoneme durations
 (`scripts/phoneme_words.py`), and BgTTS from its own cross-attention (`scripts/attention_words.py`).
 Engines chunked a sentence at a time (macOS `say`, MMS, Pocket)
 land on sentence-sized chunks without them, and audio synthesized
@@ -152,7 +152,7 @@ or which never landed on a page. Saying nothing is deliberate: the alternative i
 their book has no text layer on the strength of a missing file.
 
 The two fields are independent, and a reader that conflates them will say the wrong thing. A scan
-that was never OCR'd and is narrated by Kokoro is `granularity: "word"` with `marks: "paragraph"` —
+that was never OCR'd and is narrated by a word-timed voice is `granularity: "word"` with `marks: "paragraph"` —
 the voice is measured to the word and the page cannot show it. Give the same scan a text layer
 (`ocrEngine: "tesseract"` on the book) and it becomes `word`/`word`, because everything downstream
 then reads the searchable copy Tesseract wrote. The reverse is just as common: a born-digital book

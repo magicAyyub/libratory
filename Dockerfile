@@ -23,13 +23,12 @@ RUN pnpm --filter @libratory/web build
 
 # ---- Runtime ----------------------------------------------------------------
 FROM node:22-bookworm AS runtime
-# ffmpeg carries the built-in aac encoder lib/ffmpeg.ts falls back to; espeak-ng is the G2P floor
-# under Kokoro; poppler-utils is pdftotext and pdftoppm; tesseract-ocr reads scanned pages (osd
+# ffmpeg carries the built-in aac encoder lib/ffmpeg.ts falls back to; poppler-utils is pdftotext and pdftoppm; tesseract-ocr reads scanned pages (osd
 # names the script); zip/unzip pack and unpack the read-along EPUBs.
 # chromium renders the PDF/EPUB document exports — lib/vivliostyle.ts prefers a system browser,
 # and the alternative is a 345 MB in-volume Chrome that would still be missing its shared libraries.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ffmpeg espeak-ng poppler-utils tesseract-ocr tesseract-ocr-eng tesseract-ocr-osd zip unzip chromium \
+      ffmpeg poppler-utils tesseract-ocr tesseract-ocr-eng tesseract-ocr-osd zip unzip chromium \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -109,7 +108,7 @@ EXPOSE 3034
 HEALTHCHECK --interval=30s --timeout=5s --start-period=120s \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3034)+'/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
 
-# The entrypoint caches the essential Kokoro voice into /models on first boot — the one model
+# The entrypoint caches the default Pocket TTS voice into /models on first boot — the one model
 # the lazy-download story cannot cover, because synthesis itself runs HF_HUB_OFFLINE=1.
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 # tsx from the server's own node_modules — the same way `pnpm dev` runs it, minus the watcher.

@@ -12,7 +12,7 @@ import {
 
 const NOW = Date.parse("2026-10-07T12:00:00Z");
 const DAY = 24 * 60 * 60 * 1000;
-const current = { voice: "af_heart", speed: 1 };
+const current = { voice: "pocket:alba", speed: 1 };
 
 function chapter(over: Partial<FilterableChapter> = {}): FilterableChapter {
   return {
@@ -21,7 +21,7 @@ function chapter(over: Partial<FilterableChapter> = {}): FilterableChapter {
     durationMs: 8 * 60_000,
     sourceFileIndex: 0,
     audioPath: "/a.m4a",
-    synthesizedWith: { voice: "af_heart", speed: 1, at: new Date(NOW - 2 * DAY).toISOString() },
+    synthesizedWith: { voice: "pocket:alba", speed: 1, at: new Date(NOW - 2 * DAY).toISOString() },
     ...over,
   };
 }
@@ -67,26 +67,26 @@ describe("matchesFilters", () => {
   it("finds audio made with another voice or speed", () => {
     expect(keeps(chapter(), { voice: STALE_VOICE })).toBe(false);
     expect(keeps(chapter({ synthesizedWith: { voice: "bm_george", speed: 1 } }), { voice: STALE_VOICE })).toBe(true);
-    expect(keeps(chapter({ synthesizedWith: { voice: "af_heart", speed: 1.2 } }), { voice: STALE_VOICE })).toBe(true);
+    expect(keeps(chapter({ synthesizedWith: { voice: "pocket:alba", speed: 1.2 } }), { voice: STALE_VOICE })).toBe(true);
     // An engine with no speed control records none, and that is not a mismatch
-    expect(keeps(chapter({ synthesizedWith: { voice: "af_heart", speed: null } }), { voice: STALE_VOICE })).toBe(false);
+    expect(keeps(chapter({ synthesizedWith: { voice: "pocket:alba", speed: null } }), { voice: STALE_VOICE })).toBe(false);
     // Audio from before the voice was recorded cannot be shown to match
     expect(keeps(chapter({ synthesizedWith: null }), { voice: STALE_VOICE })).toBe(true);
     expect(keeps(chapter({ audioPath: null, synthesizedWith: null }), { voice: STALE_VOICE })).toBe(false);
   });
 
   it("matches one voice only where there is audio made with it", () => {
-    expect(keeps(chapter(), { voice: "af_heart" })).toBe(true);
-    expect(keeps(chapter({ audioPath: null }), { voice: "af_heart" })).toBe(false);
+    expect(keeps(chapter(), { voice: "pocket:alba" })).toBe(true);
+    expect(keeps(chapter({ audioPath: null }), { voice: "pocket:alba" })).toBe(false);
   });
 
   it("dates by when the audio was made", () => {
     expect(keeps(chapter(), { age: "week" })).toBe(true);
     expect(keeps(chapter(), { age: "day" })).toBe(false);
     expect(keeps(chapter(), { age: "older-week" })).toBe(false);
-    const old = chapter({ synthesizedWith: { voice: "af_heart", speed: 1, at: new Date(NOW - 40 * DAY).toISOString() } });
+    const old = chapter({ synthesizedWith: { voice: "pocket:alba", speed: 1, at: new Date(NOW - 40 * DAY).toISOString() } });
     expect(keeps(old, { age: "older-month" })).toBe(true);
-    expect(keeps(chapter({ synthesizedWith: { voice: "af_heart" } }), { age: "older-week" })).toBe(false);
+    expect(keeps(chapter({ synthesizedWith: { voice: "pocket:alba" } }), { age: "older-week" })).toBe(false);
     expect(keeps(chapter({ audioPath: null }), { age: "week" })).toBe(false);
   });
 

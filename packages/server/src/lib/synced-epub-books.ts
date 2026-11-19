@@ -1,3 +1,4 @@
+import { env } from "../env.ts";
 import { execFile, spawn } from "node:child_process";
 import { createWriteStream } from "node:fs";
 import { copyFile, mkdir, rename, rm, stat, writeFile } from "node:fs/promises";
@@ -270,7 +271,7 @@ export async function createSyncedEpubBook(bookId: string, input: CreateSyncedEp
       description: typeof manifest.book.description === "string" ? Array.from(manifest.book.description).slice(0, 2000).join("") : null,
       language: manifest.book.language || null,
       origin: { type: "synced-epub", filename: input.filename },
-      voice: "kokoro:af_heart",
+      voice: env.DEFAULT_VOICE,
       skipSynthesis: true,
       folderId,
       profileId,

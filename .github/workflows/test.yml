@@ -175,7 +175,7 @@ jobs:
           CONDA_ENV_PATH: ${{ runner.temp }}/venv/bin
           WEB_DIR: ${{ github.workspace }}/packages/web/dist
 
-      # The @slow tier stays out: it runs marker and Kokoro for real, which is twenty minutes and
+      # The @slow tier stays out: it runs marker and Pocket TTS for real, which is twenty minutes and
       # several gigabytes of models.
       - run: pnpm e2e:smoke
         env:

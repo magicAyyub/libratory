@@ -18,6 +18,9 @@ testUrl.pathname = `/${currentDbName}`;
 // Modules such as search-index capture this URL when imported. Set it before the test file
 // loads: mocking db.ts alone leaves real quickAddJob calls migrating/queueing in the user's DB.
 env.DATABASE_URL = testUrl.href;
+// Personal voice choices in .env must not change what the tests see.
+env.DEFAULT_VOICE = "pocket:alba";
+env.HIDDEN_VOICE_ENGINES = [];
 // Graphile falls back to process.env when handed no connection string, which is what a test that
 // stubs env.ts without DATABASE_URL passes it; dotenv put the developer's database there.
 process.env.DATABASE_URL = testUrl.href;

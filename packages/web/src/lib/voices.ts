@@ -3,11 +3,9 @@ import {
   type VoiceEngine,
   type VoiceGroup,
   languageOfStaticVoice,
-  kokoroVoiceGroups,
   narratorVoices,
   loudkitVoices,
   ENGINE_PREFIXES,
-  normalizeVoiceId,
   POCKET_CUSTOM_PREFIX,
 } from "../../../server/src/lib/voice-catalog.ts";
 
@@ -20,12 +18,10 @@ export {
   speedRangeFor,
   type SpeedRange,
   languageOfStaticVoice,
-  kokoroVoiceGroups,
   narratorVoices,
   loudkitVoices,
   engineForVoiceId,
   voiceHasWordTiming,
-  normalizeVoiceId,
   sayVoiceToEntry,
   cartesiaVoiceToEntry,
   elevenlabsVoiceToEntry,
@@ -42,10 +38,10 @@ export function providerOfVoice(voice: Pick<Voice, "id">): string {
   if (voice.id.startsWith("say:")) return "macOS system";
   if (voice.id.startsWith("cartesia:")) return "Cartesia";
   if (voice.id.startsWith("elevenlabs:")) return "ElevenLabs";
-  return "Kokoro";
+  return "Other";
 }
 
-export const PROVIDER_ORDER = ["Kokoro", "Pocket TTS", "loudkit", "Bulgarian narrators", "macOS system", "Cartesia", "ElevenLabs"];
+export const PROVIDER_ORDER = ["Pocket TTS", "loudkit", "Bulgarian narrators", "macOS system", "Cartesia", "ElevenLabs"];
 
 
 export const LANGUAGE_LABELS: Record<string, string> = {
@@ -88,9 +84,8 @@ export function languageLabel(code: string): string {
   }
 }
 
-// Kokoro encodes language in the voice prefix; the narrator models are Bulgarian.
+// The narrator models are Bulgarian.
 const voiceGroups: VoiceGroup[] = [
-  ...kokoroVoiceGroups,
   { label: "Bulgarian", voices: narratorVoices },
   { label: "loudkit", voices: loudkitVoices },
 ];
@@ -102,7 +97,6 @@ function decorate(voice: Voice, engine: VoiceEngine): Voice {
 }
 
 export const staticVoices: Voice[] = [
-  ...kokoroVoiceGroups.flatMap((group) => group.voices).map((v) => decorate(v, "kokoro")),
   ...narratorVoices.map((v) => decorate(v, "narrators")),
   ...loudkitVoices.map((v) => decorate(v, "loudkit")),
 ];
@@ -110,7 +104,7 @@ export const staticVoices: Voice[] = [
 const voicesById = new Map(voiceGroups.flatMap((group) => group.voices).map((voice) => [voice.id, voice]));
 
 export function getVoiceById(voiceId: string): Voice | null {
-  return voicesById.get(voiceId) ?? voicesById.get(normalizeVoiceId(voiceId)) ?? null;
+  return voicesById.get(voiceId) ?? null;
 }
 
 // Removed engines still name the chapters they narrated
@@ -124,6 +118,7 @@ export function getVoiceLabel(voiceId: string): string {
   if (!voice) {
     const retired = RETIRED_VOICE_LABELS[voiceId];
     if (retired) return retired;
+    if (voiceId.startsWith("kokoro:") || /^[a-z]{2}_[a-z]+$/.test(voiceId)) return "Kokoro (retired)";
     if (voiceId.startsWith("say:")) return humanizeSayVoiceId(voiceId);
     if (voiceId.startsWith("cartesia:")) return `Cartesia ${voiceId.slice("cartesia:".length, "cartesia:".length + 8)}`;
     if (voiceId.startsWith("elevenlabs:")) return `ElevenLabs ${voiceId.slice("elevenlabs:".length, "elevenlabs:".length + 8)}`;

@@ -492,14 +492,14 @@ describe("variants router", () => {
 
     await caller.setVoice({ bookId, key: "Bulgarian", voice: "bg-bgtts:male" });
     await caller.setVoice({ bookId, key: "Bulgarian", speed: 1.2 });
-    await caller.setVoice({ bookId, key: "eli5", voice: "af_bella" });
+    await caller.setVoice({ bookId, key: "eli5", voice: "pocket:jane" });
 
     const book = firstRow(await db.select().from(books).where(eq(books.id, bookId)));
     expect(book.variantVoices).toEqual({
       Bulgarian: { voice: "bg-bgtts:male", speed: 1.2 },
-      eli5: { voice: "af_bella" },
+      eli5: { voice: "pocket:jane" },
     });
-    expect(book.voice).toBe("af_heart");
+    expect(book.voice).toBe("pocket:fr:estelle");
   });
 
   it("setVoice rejects unknown voice ids", async () => {

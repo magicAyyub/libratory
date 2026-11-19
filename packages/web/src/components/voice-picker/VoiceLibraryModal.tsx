@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   cartesiaVoiceToEntry,
   elevenlabsVoiceToEntry,
+  engineForVoiceId,
   languageLabel,
   voiceCoversLanguage,
   voiceIsForeignIn,
@@ -134,9 +135,13 @@ export function VoiceLibraryModal({
     [pocket, pocketLanguages],
   );
 
+  const { data: hiddenEngines = [] } = trpc.voiceSettings.hiddenEngines.useQuery(undefined, { staleTime: Infinity });
+
   const allVoices = useMemo<Voice[]>(
-    () => [...staticVoices, ...sayVoices.map(sayVoiceToEntry), ...cartesiaVoices.map(cartesiaVoiceToEntry), ...elevenlabsVoices.map(elevenlabsVoiceToEntry), ...pocketVoices],
-    [sayVoices, cartesiaVoices, elevenlabsVoices, pocketVoices],
+    () =>
+      [...staticVoices, ...sayVoices.map(sayVoiceToEntry), ...cartesiaVoices.map(cartesiaVoiceToEntry), ...elevenlabsVoices.map(elevenlabsVoiceToEntry), ...pocketVoices]
+        .filter((voice) => !hiddenEngines.includes(engineForVoiceId(voice.id))),
+    [sayVoices, cartesiaVoices, elevenlabsVoices, pocketVoices, hiddenEngines],
   );
 
   const languageCounts = useMemo(() => {

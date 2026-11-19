@@ -11,11 +11,6 @@ vi.mock("./cartesia.ts", () => ({
   findCartesiaVoice: vi.fn(async () => null),
 }));
 
-vi.mock("./kokoro.ts", () => ({
-  synthesize: vi.fn(async () => {}),
-  KokoroAbortedError: class KokoroAbortedError extends Error {},
-}));
-
 import { synthesize, TtsAbortedError } from "./tts.ts";
 
 describe("tts Cartesia dispatcher", () => {

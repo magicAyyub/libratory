@@ -50,7 +50,7 @@ describe("assistant tools", () => {
     expect(tierOf("update_chapter", { id: "c", title: "Two" })).toBe("quick");
     expect(tierOf("update_chapter", { id: "c", text: "Rewritten" })).toBe("confirm");
     expect(tierOf("set_book_settings", { id: "b", title: "T", folder: "Work" })).toBe("quick");
-    expect(tierOf("set_book_settings", { id: "b", voice: "kokoro:af_heart" })).toBe("confirm");
+    expect(tierOf("set_book_settings", { id: "b", voice: "pocket:alba" })).toBe("confirm");
     expect(tierOf("redetect_chapters", { id: "b" })).toBe("confirm");
     expect(tierOf("redetect_chapters", { id: "b", llmChapterDetection: true })).toBe("spend");
     expect(tierOf("upload_book", { paths: ["/a.pdf"], ocrEngine: "llm" })).toBe("spend");

@@ -1,7 +1,7 @@
 """Word timings from a voice's own phoneme durations — no aligner, no second model.
 
-Piper and Kokoro both decide how long every phoneme lasts while they speak, and hand those
-durations back (Piper's `include_alignments`, Kokoro's `pred_dur`). What they do not say is which
+Piper decides how long every phoneme lasts while it speaks, and hands those durations back
+(`include_alignments`). What it does not say is which
 phoneme belongs to which word: espeak runs short words into their neighbours ("на хората" comes back as one
 phoneme word, `nˌɐxorˈatɐ`), so splitting the phonemes at spaces matched the text's words in about
 a third of the chunks measured. Instead each word is phonemized on its own and that sequence is

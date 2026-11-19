@@ -49,7 +49,6 @@ if [ "$PLATFORM" = "linux" ]; then
 fi
 missing=()
 command -v ffmpeg >/dev/null 2>&1 || missing+=("ffmpeg ($INSTALL ffmpeg)")
-command -v espeak-ng >/dev/null 2>&1 || missing+=("espeak-ng ($INSTALL espeak-ng)")
 command -v pdftotext >/dev/null 2>&1 || missing+=("pdftotext ($INSTALL $POPPLER_PKG)")
 command -v tesseract >/dev/null 2>&1 || missing+=("tesseract ($INSTALL $TESSERACT_PKG)")
 command -v pnpm >/dev/null 2>&1 || missing+=("pnpm (npm install -g pnpm)")
@@ -138,16 +137,8 @@ PY="$VENV_DIR/bin/python"
 echo ""
 echo "Verifying Python runtimes..."
 "$PY" -c "import marker; print(f'  marker: {marker.__version__}')" 2>/dev/null || echo "  marker: installed (version check N/A)"
-"$PY" -c "from kokoro import KPipeline; print('  kokoro: OK')"
 "$PY" -c "from transformers import AutoTokenizer, VitsModel; print('  mms runtime: OK')"
 
-# What a first run must have lives in scripts/models.py, which the desktop app calls too — spelling
-# it out again here is how the two paths drift.
-echo ""
-echo "Caching the models a first run needs (~350 MB)..."
-"$PY" "$REPO_DIR/scripts/models.py" --essential
-
-echo ""
 # Everything else — Marker 5.1 GB, BGE-M3 4.3 GB, the MMS Bulgarian voice 290 MB — is fetched by
 # scripts/models.py the first time someone asks for the feature it powers. Downloading all of it
 # here meant ~15 GB and an hour before the app could open a single page.
@@ -176,7 +167,7 @@ if [ -z "${HF_TOKEN:-}" ] && [ -f "$REPO_DIR/.env" ]; then
   export HF_TOKEN
 fi
 
-echo "Caching Pocket TTS model and catalog voices (~500 MB)..."
+echo "Caching Pocket TTS models and catalog voices (~1.5 GB)..."
 if [ -n "${HF_TOKEN:-}" ]; then
   echo "  HF_TOKEN set — will also fetch the gated voice-cloning weights"
 else
@@ -192,7 +183,8 @@ POCKET_DATA_DIR="${POCKET_DATA_DIR:-./data}"
 case "$POCKET_DATA_DIR" in /*) ;; *) POCKET_DATA_DIR="$REPO_DIR/packages/server/$POCKET_DATA_DIR" ;; esac
 HF_HUB_CACHE_DIR="${HF_HOME:-$HOME/.cache/huggingface}/hub"
 for POCKET_MODEL in spanish italian german portuguese french_24l; do
-  if compgen -G "$HF_HUB_CACHE_DIR/models--kyutai--pocket-tts*/snapshots/*/languages/$POCKET_MODEL/model.safetensors" >/dev/null; then
+  # French is the default narrator, so a fresh checkout always gets it
+  if [ "$POCKET_MODEL" = french_24l ] || compgen -G "$HF_HUB_CACHE_DIR/models--kyutai--pocket-tts*/snapshots/*/languages/$POCKET_MODEL/model.safetensors" >/dev/null; then
     "$POCKET_PY" "$REPO_DIR/scripts/synthesize_pocket_tts.py" --cache-only --language "$POCKET_MODEL" \
       --native-voices-dir "$POCKET_DATA_DIR/pocket-voices"
   fi

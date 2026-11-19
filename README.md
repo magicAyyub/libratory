@@ -14,7 +14,7 @@
 
 ![The narration following the printed page: the sentence being spoken is lit, and the word being said is marked inside it](docs/images/read-along.gif)
 
-<p align="center"><i>Frankenstein, narrated by Kokoro — the spoken sentence lit on the book's own page, the spoken word marked inside it.</i></p>
+<p align="center"><i>Frankenstein, read along — the spoken sentence lit on the book's own page, the spoken word marked inside it.</i></p>
 
 The name is *library* plus *laboratory*, and that is what it is: a workbench for the PDFs you already own.
 
@@ -115,7 +115,7 @@ Ships with `scripts/hn-top10.mjs`, which turns any day's top Hacker News stories
 <details>
 <summary><b>How is this different from Ebook2Audiobook?</b></summary>
 
-[Ebook2Audiobook](https://github.com/DrewThomasson/ebook2audiobook) is a one-shot converter: file in, audiobook out, with voice cloning (XTTSv2) and huge language coverage. Libratory is a **library you live in**: books persist in a database with per-chapter editing, re-synthesis, AI cleanup, translations and rewrites, notes, digests, read-along export, and chat over the content of every book. PDFs are the first-class input (raw text instantly, OCR opt-in) rather than routed through an EPUB conversion, a DRM-free EPUB imports straight into chapters, and the TTS stack is newer local models (Kokoro, Pocket TTS, BgTTS-38M) plus macOS and Cartesia voices instead of the Coqui-era engines.
+[Ebook2Audiobook](https://github.com/DrewThomasson/ebook2audiobook) is a one-shot converter: file in, audiobook out, with voice cloning (XTTSv2) and huge language coverage. Libratory is a **library you live in**: books persist in a database with per-chapter editing, re-synthesis, AI cleanup, translations and rewrites, notes, digests, read-along export, and chat over the content of every book. PDFs are the first-class input (raw text instantly, OCR opt-in) rather than routed through an EPUB conversion, a DRM-free EPUB imports straight into chapters, and the TTS stack is newer local models (Pocket TTS, BgTTS-38M) plus macOS and Cartesia voices instead of the Coqui-era engines.
 
 If you want "this EPUB in a cloned voice", use Ebook2Audiobook. If you want to clean up, restructure, transform, and actually work with a messy PDF collection, that's this.
 
@@ -141,7 +141,7 @@ pnpm run setup    # deps, .venv, model cache, Postgres, migrations
 pnpm dev          # server on :3034, web on :3033
 ```
 
-Install first: `ffmpeg`, `poppler`, `espeak-ng`, Python 3.12, Node >=22.22, pnpm, and Docker (for Postgres). On a Mac that's `brew install ffmpeg poppler espeak-ng python@3.12 node pnpm`; on Linux use your package manager — `pnpm run setup` names whatever is missing.
+Install first: `ffmpeg`, `poppler`, Python 3.12, Node >=22.22, pnpm, and Docker (for Postgres). On a Mac that's `brew install ffmpeg poppler python@3.12 node pnpm`; on Linux use your package manager — `pnpm run setup` names whatever is missing.
 
 ### Desktop app — macOS
 
@@ -154,10 +154,10 @@ Signed and notarised; installs its own runtime on first launch, so nothing else 
 <details>
 <summary><b>Prerequisites in full</b></summary>
 
-An Apple Silicon Mac on macOS 14 Sonoma or later (PyTorch no longer ships for 13), or a Linux machine (x86_64 or arm64, CPU is enough), or Windows through Docker Desktop and WSL2. Every engine runs on all of them; Kokoro uses the GPU where there is one, the rest are CPU or cloud.
+An Apple Silicon Mac on macOS 14 Sonoma or later (PyTorch no longer ships for 13), or a Linux machine (x86_64 or arm64, CPU is enough), or Windows through Docker Desktop and WSL2. Every engine runs on all of them; most are CPU or cloud.
 
-- **Mac**: [Homebrew](https://brew.sh), then: `brew install ffmpeg poppler tesseract espeak-ng python@3.12 node pnpm` — for running from source, which spawns `ffmpeg`, `pdftotext` and `tesseract` off your `PATH`. The packaged app carries its own copies and needs none of this.
-- **Linux (from source)**: `ffmpeg espeak-ng poppler-utils tesseract-ocr tesseract-ocr-eng tesseract-ocr-osd zip unzip python3.12 node pnpm` from your package manager — `pnpm run setup` names whatever is missing. Or skip all of it and run the Docker image.
+- **Mac**: [Homebrew](https://brew.sh), then: `brew install ffmpeg poppler tesseract python@3.12 node pnpm` — for running from source, which spawns `ffmpeg`, `pdftotext` and `tesseract` off your `PATH`. The packaged app carries its own copies and needs none of this.
+- **Linux (from source)**: `ffmpeg poppler-utils tesseract-ocr tesseract-ocr-eng tesseract-ocr-osd zip unzip python3.12 node pnpm` from your package manager — `pnpm run setup` names whatever is missing. Or skip all of it and run the Docker image.
 - Docker — [OrbStack](https://orbstack.dev/) or Docker Desktop on a Mac, Docker Engine on Linux (Postgres). The desktop app requires it too.
 - Optional: an AI model for translation, rewrites, cleanup, digests, Ask AI, chat, and LLM chapter detection — [Ollama](https://ollama.com) or LM Studio running locally (auto-discovered, fully offline), or a [DeepSeek](https://platform.deepseek.com/) / OpenAI / Anthropic / Gemini API key.
 - Optional: a [Cartesia](https://cartesia.ai) or [ElevenLabs](https://elevenlabs.io) API key for their cloud voices.
@@ -186,7 +186,7 @@ The ⚙️ button on the home page opens Settings: it shows which local servers 
 <details>
 <summary><b>Docker: volumes, ports, and exposing it beyond localhost</b></summary>
 
-Nothing in the image is Linux-specific, so the same command is also the Windows route, through Docker Desktop with the WSL2 backend — that path is new, so [open an issue](https://github.com/subev/libratory/issues/new) if it does not work. Migrations apply at boot, and the first boot caches the essential Kokoro voice (~350 MB) before the server starts. The database lives in the `pgdata17` volume, the library's files in `data`, every lazily-downloaded model in `models` — backing up those three is the whole story (the models can be downloaded again, the other two cannot). API keys set in ⚙️ Settings persist in `/data/.env`.
+Nothing in the image is Linux-specific, so the same command is also the Windows route, through Docker Desktop with the WSL2 backend — that path is new, so [open an issue](https://github.com/subev/libratory/issues/new) if it does not work. Migrations apply at boot, and the first boot caches the default Pocket TTS voice before the server starts. The database lives in the `pgdata17` volume, the library's files in `data`, every lazily-downloaded model in `models` — backing up those three is the whole story (the models can be downloaded again, the other two cannot). API keys set in ⚙️ Settings persist in `/data/.env`.
 
 **Ollama and LM Studio on the host.** Inside the container `localhost` is the container itself, so the install file points discovery at `host.docker.internal` (`OLLAMA_URL`, `LMSTUDIO_URL`). Docker Desktop and OrbStack reach a server listening on the host's loopback that way. Docker Engine on Linux reaches only the host's bridge address, so start Ollama with `OLLAMA_HOST=0.0.0.0` and turn on *Serve on Local Network* in LM Studio. A server on another machine works too: set either variable to its address.
 
@@ -222,18 +222,15 @@ Every engine covers a different set, so the answer to "does it do language X" de
 
 | Language | Voices | Engine |
 | --- | --- | --- |
-| English | 27 + 26 | Kokoro, Pocket TTS |
+| English | 26 | Pocket TTS |
 | Spanish, Italian, German, Portuguese, French | 26 each | Pocket TTS (downloadable from the picker) |
 | German, Polish, Dutch, Swedish, Danish | 2 each | loudkit (opt-in, downloadable from the picker; not yet checked by ear) |
 | English | 10 | loudkit (opt-in) |
 | Spanish, Italian, European Portuguese | 1 each | loudkit (opt-in) |
 | Bulgarian | 5 + system | BgTTS-38M (3 voices, opt-in), Piper Dimitar, MMS Bulgarian, macOS `Daria` |
-| French, Spanish, Italian, Brazilian Portuguese | 2 each | Kokoro |
-| Hindi | 4 | Kokoro |
-| Mandarin Chinese | 8 | Kokoro |
 | Most others | many | [Cartesia](https://cartesia.ai) and [ElevenLabs](https://elevenlabs.io) (cloud, need an API key), plus any macOS system voice you have installed |
 
-![Scrolling the voice picker's Italian list: 73 voices grouped under Kokoro, Pocket TTS, macOS system voices, Cartesia and ElevenLabs, the ElevenLabs voices not made for Italian marked as such](docs/images/voice-picker-languages.gif)
+![Scrolling the voice picker's Italian list: 73 voices grouped under Pocket TTS, macOS system voices, Cartesia and ElevenLabs, the ElevenLabs voices not made for Italian marked as such](docs/images/voice-picker-languages.gif)
 
 The picker leads with the language, not the engine: pick Italian and you get every voice that can read it — 73 here, grouped by engine, with a preview button on each one. Each row says whether the voice times every word (words light up as they are read) or only sentences. ElevenLabs voices appear under every language their model reads; the ones not made for it are marked and preview in that language.
 
@@ -244,21 +241,19 @@ An AI provider key (DeepSeek, OpenAI, Anthropic, Gemini) drives the text feature
 
 | Engine | Where it runs | Good for |
 | --- | --- | --- |
-| Kokoro | The GPU where there is one (Metal on a Mac), else the CPU | The most natural local English voices |
 | Pocket TTS | CPU, ~12x realtime | Six languages, and cloning your own voice |
 | loudkit | CPU and Metal, ~3x realtime on a Mac (CPU alone, as on Linux, ~0.3x), a 1.3 GB download | Nine languages with every word timed |
 | Piper, BgTTS-38M | CPU | Bulgarian |
 | macOS voices | CPU, ~25x realtime | Fast drafts, many languages, Mac only |
 | Cartesia, ElevenLabs | Their servers, billed per character | A slow machine, or a language no local engine reads |
 
-Docker on a Mac cannot reach the GPU, so a container narrates Kokoro on the CPU; the desktop app or a source install uses Metal. Narration that stops partway — a crash, a restart, a container that went down — resumes when the server comes back, from the pieces already made.
+Narration that stops partway — a crash, a restart, a container that went down — resumes when the server comes back, from the pieces already made.
 
 </details>
 
 <details>
 <summary><b>Notes on the edges</b></summary>
 
-- **Japanese is not supported**, even though Kokoro ships Japanese voices. They need a MeCab/`fugashi` native stack plus a ~700 MB dictionary, and the extra downgrades a package the Marker/spaCy side depends on. Not worth it for five voices — so they aren't listed in the picker.
 - **Pocket TTS ships one checkpoint per language**, and only English is installed by `pnpm run setup`. The others download on demand: pick the language in the voice picker and press Download on the Pocket TTS notice — it shows the size first (~370 MB each, **~800 MB for French**, which has no distilled build yet and runs ~2.5x slower). Downloads land in the shared HuggingFace cache and go live immediately; no server restart.
 - **Pick the matching language.** The English model will happily read French or Italian text and produce something that sounds plausible, because the voices include non-English *speakers* (Giovanni, Lola, Juergen, Rafael, Estelle). It mispronounces silent letters and liaisons — the same French sentence runs 25% longer on the English model than the French one. Selecting the language is what makes it correct, not selecting a native-sounding voice.
 - **Pocket TTS chunking and French punctuation.** Pocket groups sentences from a paragraph into requests up to 1,000 characters, splitting at sentence boundaries; a single sentence longer than that is split at word boundaries. Blank lines remain pauses, while single line breaks are joined. French synthesis also uses straight apostrophes, drops French guillemets, turns spaced clause dashes and non-time colons into commas, removes spacing before punctuation such as `!` without changing the exclamation mark, and separates digits around a slash with spaces. Chapter text and read-along text remain unchanged.
@@ -280,7 +275,7 @@ Pocket TTS can clone a voice from a short sample. In the voice picker, open **Yo
 
 ![The Your voices tab of the voice picker, listing cloned voices above the recording controls](docs/images/voice-cloning.png)
 
-**Set your expectations accordingly.** Pocket TTS is a 100M-parameter model built to run on a CPU, and a clone inherits that ceiling — it lands somewhere between recognisable and convincing, and it is not as easy to listen to across a whole book as Kokoro's built-in voices. It also reproduces the *recording* faithfully, so room echo and mic hiss get cloned along with the voice. A quiet room and a headset mic help; on iPhone, Voice Memos set to **Studio** quality gives a noticeably cleaner sample. It's a fun extra rather than the voice you'd pick for a long listen.
+**Set your expectations accordingly.** Pocket TTS is a 100M-parameter model built to run on a CPU, and a clone inherits that ceiling — it lands somewhere between recognisable and convincing, and it is not as easy to listen to across a whole book as Pocket TTS's built-in voices. It also reproduces the *recording* faithfully, so room echo and mic hiss get cloned along with the voice. A quiet room and a headset mic help; on iPhone, Voice Memos set to **Studio** quality gives a noticeably cleaner sample. It's a fun extra rather than the voice you'd pick for a long listen.
 
 Kyutai's terms prohibit cloning a voice without that person's consent, along with deception and impersonation generally — hence the confirmation checkbox, which the server enforces rather than takes on trust. Enabling cloning means accepting those terms on your own HuggingFace account, and if you host Libratory for other people, enforcing them becomes your responsibility.
 
@@ -302,13 +297,13 @@ Jobs run through [Graphile Worker](https://github.com/graphile/worker) in seven 
 <details>
 <summary><b>TTS engines and sync maps</b></summary>
 
-**Local, GPU-accelerated via MPS/Metal:** [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) (English, French, Spanish, Italian, Brazilian Portuguese, Hindi, Mandarin), and Meta MMS Bulgarian. **Local, CPU:** BgTTS-38M V2 and Piper for Bulgarian, Pocket TTS.
+**Local, GPU-accelerated via MPS/Metal:** Meta MMS Bulgarian. **Local, CPU:** BgTTS-38M V2 and Piper for Bulgarian, Pocket TTS.
 
 **Local, CPU:** [Pocket TTS](https://github.com/kyutai-labs/pocket-tts) from Kyutai (100M params, ~12x realtime, 26 built-in voices, optional voice cloning from a ~20s sample), and every installed macOS system voice (via `say`, free and ~25x realtime).
 
 **Cloud, optional:** [Cartesia](https://cartesia.ai) Sonic (`CARTESIA_API_KEY`) and [ElevenLabs](https://elevenlabs.io) (`ELEVENLABS_API_KEY`, whose free tier is 10,000 characters a month — synthesis checks what is left and refuses before spending rather than stopping halfway).
 
-During synthesis the server keeps a text↔audio timing map (`chNNN.sync.json`) next to each chapter's M4A — per chunk always, and per word where the engine reports it (Kokoro and Piper from their own phoneme durations — in every language Kokoro reads except Mandarin — BgTTS from its own cross-attention, loudkit from its generator's self-attention, Cartesia from `add_timestamps`, ElevenLabs from its character alignment). That map powers the web UI's read-along player and the synced EPUB export — and once it is written, the worker deletes the intermediate chunk WAVs to reclaim disk (`pnpm --filter server cleanup:chunks` sweeps leftovers from older runs).
+During synthesis the server keeps a text↔audio timing map (`chNNN.sync.json`) next to each chapter's M4A — per chunk always, and per word where the engine reports it (Piper from its own phoneme durations, BgTTS from its own cross-attention, loudkit from its generator's self-attention, Cartesia from `add_timestamps`, ElevenLabs from its character alignment). That map powers the web UI's read-along player and the synced EPUB export — and once it is written, the worker deletes the intermediate chunk WAVs to reclaim disk (`pnpm --filter server cleanup:chunks` sweeps leftovers from older runs).
 
 </details>
 
@@ -347,14 +342,13 @@ data/previews/                    Voice preview M4As
 <details>
 <summary><b>Models: what downloads when</b></summary>
 
-- Every TTS/extraction subprocess runs with `HF_HUB_OFFLINE=1`, so models never download at synthesis time. `pnpm run setup` caches only what the core path needs — **Kokoro-82M, ~350 MB**. The heavy optional bundles arrive at the doorway of the feature that needs them, with a size and a button: **Marker/Surya 5.1 GB** (full extraction), **BGE-M3 4.3 GB** (library search and chat), **Bulgarian narrators 1.2 GB**. `WITH_ALL_MODELS=1 pnpm run setup` fetches everything up front instead — setup used to do that unconditionally, which meant ~15 GB and an hour before the app could open a page.
+- Every TTS/extraction subprocess runs with `HF_HUB_OFFLINE=1`, so models never download at synthesis time. `pnpm run setup` caches only what the core path needs — **Pocket TTS with its English and French models, ~1.5 GB**. The heavy optional bundles arrive at the doorway of the feature that needs them, with a size and a button: **Marker/Surya 5.1 GB** (full extraction), **BGE-M3 4.3 GB** (library search and chat), **Bulgarian narrators 1.2 GB**. `WITH_ALL_MODELS=1 pnpm run setup` fetches everything up front instead — setup used to do that unconditionally, which meant ~15 GB and an hour before the app could open a page.
 - `scripts/models.py --status` lists the bundles and what is cached; `--download <id>` fetches one; `--capabilities` reports whether CUDA is usable, which decides marker's device on Linux. A `.models-missing` file at the repo root (one bundle id per line) makes the app pretend those are absent — the only sane way to work on a download gate without deleting gigabytes.
 - The first PDF/EPUB export downloads a rendering browser (~350 MB) into the Vivliostyle cache. In the packaged app the Vivliostyle CLI itself (~230 MB of npm packages) is installed at that same moment, into `VIVLIOSTYLE_DIR` — a compiled binary has no `node_modules` to resolve it from.
 - Python dependencies are a **uv project**: `pyproject.toml` + `uv.lock` at the repo root, installed with `uv sync --frozen` (setup fetches `uv` into `.uv/` if it is missing). 166 packages resolve in under two seconds and install in about thirteen. The one `[tool.uv] override-dependencies` entry is Pillow, which marker and surya still cap below what closes its advisories.
-- **Pocket TTS** runs in its own Python env (`.venv-pocket`) because it needs numpy 2.x while the marker/kokoro stack is pinned to 1.26. `pnpm run setup` builds both. It is CPU-only by design — it leaves the GPU free for Kokoro and search — and has no speed parameter, so the UI disables the slider.
+- **Pocket TTS** runs in its own Python env (`.venv-pocket`) because it needs numpy 2.x while the marker stack is pinned to 1.26. `pnpm run setup` builds both. It is CPU-only by design — it leaves the GPU free for search — and has no speed parameter, so the UI disables the slider.
 - Piper, BgTTS-38M and loudkit run in envs of their own too (`.venv-piper`, `.venv-bgtts`, `.venv-loudkit`): Piper needs onnxruntime and numpy 2, BgTTS's codec needs a torchaudio older than the main env's torch, loudkit caps numpy below 2.4. The Mac app and the Docker image install Piper themselves; BgTTS and loudkit are built from the voice picker's *Download and set up* card, on a Mac or a source checkout (not in Docker).
 - The Bulgarian-capable narrators are BgTTS-38M V2 (three voices), Piper `Dimitar`, `MMS Bulgarian (Meta)`, the macOS `Daria` system voice, and the Bulgarian voices from Cartesia and ElevenLabs. The local model narrators run at fixed speed (UI disables the slider) except Piper; macOS and the cloud engines support the speed control.
-- Best Kokoro voices: `af_heart` (A tier), `af_bella` (A- tier), `bf_emma` (B- tier).
 
 **Voice licensing.** `facebook/mms-tts-bul` is licensed `CC-BY-NC-4.0`. Pocket TTS built-in voices are embeddings of real recordings under mixed licenses: most are CC0 or CC BY 4.0, but `cosette` and `jean` are **CC BY-NC 4.0 (non-commercial only)** and `estelle`'s provenance is unverified. Each voice shows its license in the picker. This is irrelevant while Libratory is noncommercial (see [LICENSE.md](LICENSE.md)) — it matters if you ever sell audio made with it. Details in [docs/tts-licensing.md](docs/tts-licensing.md).
 
@@ -404,7 +398,7 @@ pnpm app:dmg    # the same, plus a DMG to hand to someone
 
 It fetches Bun and bundles ffmpeg, poppler and tesseract on first run, so a fresh clone needs nothing installed globally. `--install` matters more than it sounds: without it you end up reading the behaviour of whatever is in `/Applications` while editing the build in `release/`.
 
-On first launch it checks Docker, brings up Postgres, downloads `uv`, builds the Python environment from `uv.lock`, fetches the Kokoro voice, and starts the server — which serves the UI too, so there is one port and no Vite. About 2.4 GB downloaded once — 1.4 GB of Python and PyTorch, the 347 MB Kokoro voice, and the 644 MB Postgres image; later launches take seconds. **Docker is the one thing it cannot install for you**, and the first-run screen says so rather than failing — it explains what Docker is and links to Docker Desktop and OrbStack, rather than naming a prerequisite and stopping.
+On first launch it checks Docker, brings up Postgres, downloads `uv`, builds the Python environment from `uv.lock`, installs the Pocket TTS voice, and starts the server — which serves the UI too, so there is one port and no Vite. About 2.4 GB downloaded once — 1.4 GB of Python and PyTorch, the Pocket TTS voice, and the 644 MB Postgres image; later launches take seconds. **Docker is the one thing it cannot install for you**, and the first-run screen says so rather than failing — it explains what Docker is and links to Docker Desktop and OrbStack, rather than naming a prerequisite and stopping.
 
 API keys go in **⚙️ → Settings** — AI providers under *Cloud providers*, Cartesia and ElevenLabs under *Cloud voices*. They are written to a `.env` file, named at the bottom of that panel, which the app keeps beside everything else it installed. There is nothing to edit by hand and no checkout required.
 

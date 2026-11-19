@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { engineForVoiceId, getVoiceById, languageCodeFromName, normalizeVoiceId, speedRangeFor, voiceMissingEngine, voiceSupportsSpeedControl } from "../lib/voices.ts";
+import { engineForVoiceId, getVoiceById, languageCodeFromName, speedRangeFor, voiceMissingEngine, voiceSupportsSpeedControl } from "../lib/voices.ts";
 import { trpc } from "../trpc.ts";
 import { VoicePickerProvider } from "./voice-picker/context.tsx";
 import { VoiceLibraryModal } from "./voice-picker/VoiceLibraryModal.tsx";
@@ -51,13 +51,13 @@ export function SynthesizeModal({
 
   // A voice saved while its engine was there (a checkout, then the desktop app on the same library)
   // must not queue chapters that can only fail
-  const entry = getVoiceById(normalizeVoiceId(voice));
+  const entry = getVoiceById(voice);
   const { data: engines } = trpc.models.engines.useQuery(undefined, { staleTime: 30_000, enabled: entry?.requiresEngine !== undefined });
   const voiceUnavailable = entry ? voiceMissingEngine(entry, engines) : null;
   const startable = canStart && voiceUnavailable === null;
 
   return (
-    <VoicePickerProvider selectedId={normalizeVoiceId(voice)} onSelect={onChangeVoice}>
+    <VoicePickerProvider selectedId={voice} onSelect={onChangeVoice}>
       <VoiceLibraryModal
         onClose={onClose}
         title={`Synthesize ${count} chapter${count === 1 ? "" : "s"}${language ? ` · ${language}` : ""}`}
@@ -67,7 +67,7 @@ export function SynthesizeModal({
             <SpeedSlider
               value={speed}
               onChange={onChangeSpeed}
-              range={speedRangeFor(normalizeVoiceId(voice))}
+              range={speedRangeFor(voice)}
               rangeOwner={meteredProvider(voice)}
               disabled={!voiceSupportsSpeedControl(voice)}
             />

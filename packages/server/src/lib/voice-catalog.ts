@@ -37,15 +37,8 @@ export function voiceIsForeignIn(voice: Pick<Voice, "language" | "nativeLanguage
   return voice.alsoReads?.includes(code) === true && voice.language !== code && voice.nativeLanguages?.includes(code) !== true;
 }
 
-export const KOKORO_LANGUAGE_BY_PREFIX: Record<string, string> = {
-  a: "en", b: "en", e: "es", f: "fr", h: "hi", i: "it", p: "pt", z: "zh", j: "ja",
-};
-
 export function languageOfStaticVoice(voiceId: string): string {
   if (voiceId.startsWith("bg-")) return "bg";
-  if (voiceId.startsWith("kokoro:")) {
-    return KOKORO_LANGUAGE_BY_PREFIX[voiceId.charAt("kokoro:".length)] ?? "en";
-  }
   return "en";
 }
 
@@ -53,93 +46,6 @@ export type VoiceGroup = {
   label: string;
   voices: Voice[];
 };
-
-export const kokoroVoiceGroups: VoiceGroup[] = [
-  {
-    label: "American English",
-    voices: [
-      { id: "kokoro:af_heart", label: "Heart", gender: "F", grade: "A", supportsSpeed: true },
-      { id: "kokoro:af_bella", label: "Bella", gender: "F", grade: "A-", supportsSpeed: true },
-      { id: "kokoro:af_nicole", label: "Nicole", gender: "F", grade: "B-", supportsSpeed: true },
-      { id: "kokoro:af_aoede", label: "Aoede", gender: "F", grade: "C+", supportsSpeed: true },
-      { id: "kokoro:af_kore", label: "Kore", gender: "F", grade: "C+", supportsSpeed: true },
-      { id: "kokoro:af_sarah", label: "Sarah", gender: "F", grade: "C+", supportsSpeed: true },
-      { id: "kokoro:af_alloy", label: "Alloy", gender: "F", grade: "C", supportsSpeed: true },
-      { id: "kokoro:af_nova", label: "Nova", gender: "F", grade: "C", supportsSpeed: true },
-      { id: "kokoro:af_sky", label: "Sky", gender: "F", grade: "C-", supportsSpeed: true },
-      { id: "kokoro:af_jessica", label: "Jessica", gender: "F", grade: "D", supportsSpeed: true },
-      { id: "kokoro:af_river", label: "River", gender: "F", grade: "D", supportsSpeed: true },
-      { id: "kokoro:am_fenrir", label: "Fenrir", gender: "M", grade: "C+", supportsSpeed: true },
-      { id: "kokoro:am_michael", label: "Michael", gender: "M", grade: "C+", supportsSpeed: true },
-      { id: "kokoro:am_puck", label: "Puck", gender: "M", grade: "C+", supportsSpeed: true },
-      { id: "kokoro:am_echo", label: "Echo", gender: "M", grade: "D", supportsSpeed: true },
-      { id: "kokoro:am_eric", label: "Eric", gender: "M", grade: "D", supportsSpeed: true },
-      { id: "kokoro:am_liam", label: "Liam", gender: "M", grade: "D", supportsSpeed: true },
-      { id: "kokoro:am_onyx", label: "Onyx", gender: "M", grade: "D", supportsSpeed: true },
-      { id: "kokoro:am_adam", label: "Adam", gender: "M", grade: "F+", supportsSpeed: true },
-    ],
-  },
-  {
-    label: "British English",
-    voices: [
-      { id: "kokoro:bf_emma", label: "Emma", gender: "F", grade: "B-", supportsSpeed: true },
-      { id: "kokoro:bf_isabella", label: "Isabella", gender: "F", grade: "C", supportsSpeed: true },
-      { id: "kokoro:bf_alice", label: "Alice", gender: "F", grade: "D", supportsSpeed: true },
-      { id: "kokoro:bf_lily", label: "Lily", gender: "F", grade: "D", supportsSpeed: true },
-      { id: "kokoro:bm_george", label: "George", gender: "M", grade: "C", supportsSpeed: true },
-      { id: "kokoro:bm_fable", label: "Fable", gender: "M", grade: "C", supportsSpeed: true },
-      { id: "kokoro:bm_lewis", label: "Lewis", gender: "M", grade: "D+", supportsSpeed: true },
-      { id: "kokoro:bm_daniel", label: "Daniel", gender: "M", grade: "D", supportsSpeed: true },
-    ],
-  },
-  {
-    label: "French",
-    voices: [{ id: "kokoro:ff_siwis", label: "Siwis", gender: "F", grade: "B-", supportsSpeed: true }],
-  },
-  {
-    label: "Spanish",
-    voices: [
-      { id: "kokoro:ef_dora", label: "Dora", gender: "F", grade: "C", supportsSpeed: true },
-      { id: "kokoro:em_alex", label: "Alex", gender: "M", grade: "C", supportsSpeed: true },
-    ],
-  },
-  {
-    label: "Italian",
-    voices: [
-      { id: "kokoro:if_sara", label: "Sara", gender: "F", grade: "B", supportsSpeed: true },
-      { id: "kokoro:im_nicola", label: "Nicola", gender: "M", grade: "B", supportsSpeed: true },
-    ],
-  },
-  {
-    label: "Brazilian Portuguese",
-    voices: [
-      { id: "kokoro:pf_dora", label: "Dora", gender: "F", grade: "C", supportsSpeed: true },
-      { id: "kokoro:pm_alex", label: "Alex", gender: "M", grade: "C", supportsSpeed: true },
-    ],
-  },
-  {
-    label: "Hindi",
-    voices: [
-      { id: "kokoro:hf_alpha", label: "Alpha", gender: "F", grade: "B", supportsSpeed: true },
-      { id: "kokoro:hf_beta", label: "Beta", gender: "F", grade: "B", supportsSpeed: true },
-      { id: "kokoro:hm_omega", label: "Omega", gender: "M", grade: "B", supportsSpeed: true },
-      { id: "kokoro:hm_psi", label: "Psi", gender: "M", grade: "B", supportsSpeed: true },
-    ],
-  },
-  {
-    label: "Mandarin Chinese",
-    voices: [
-      { id: "kokoro:zf_xiaobei", label: "Xiaobei", gender: "F", grade: "D", supportsSpeed: true },
-      { id: "kokoro:zf_xiaoni", label: "Xiaoni", gender: "F", grade: "D", supportsSpeed: true },
-      { id: "kokoro:zf_xiaoxiao", label: "Xiaoxiao", gender: "F", grade: "D", supportsSpeed: true },
-      { id: "kokoro:zf_xiaoyi", label: "Xiaoyi", gender: "F", grade: "D", supportsSpeed: true },
-      { id: "kokoro:zm_yunjian", label: "Yunjian", gender: "M", grade: "D", supportsSpeed: true },
-      { id: "kokoro:zm_yunxi", label: "Yunxi", gender: "M", grade: "D", supportsSpeed: true },
-      { id: "kokoro:zm_yunxia", label: "Yunxia", gender: "M", grade: "D", supportsSpeed: true },
-      { id: "kokoro:zm_yunyang", label: "Yunyang", gender: "M", grade: "D", supportsSpeed: true },
-    ],
-  },
-];
 
 export const narratorVoices: Voice[] = [
   { id: "bg-mms:bul", label: "MMS Bulgarian (Meta)", gender: null, grade: "VITS", supportsSpeed: false, note: "Meta MMS" },
@@ -194,7 +100,7 @@ export function loudkitVoiceLanguage(voice: string): string | null {
   return LOUDKIT_VOICES.find(([id]) => id === voice)?.[3] ?? null;
 }
 
-export type VoiceEngine = "kokoro" | "narrators" | "say" | "cartesia" | "elevenlabs" | "pocket" | "loudkit";
+export type VoiceEngine = "narrators" | "say" | "cartesia" | "elevenlabs" | "pocket" | "loudkit";
 
 export type SpeedRange = { min: number; max: number };
 
@@ -222,7 +128,7 @@ export function clampSpeed(voiceId: string, speed: number): number {
 }
 
 export function engineForVoiceId(voiceId: string): VoiceEngine {
-  return ENGINE_PREFIXES.find((entry) => voiceId.startsWith(entry.prefix))?.engine ?? "kokoro";
+  return ENGINE_PREFIXES.find((entry) => voiceId.startsWith(entry.prefix))?.engine ?? "pocket";
 }
 
 // Written without spaces between words, so there is no word to put a time on
@@ -230,10 +136,8 @@ const UNSPACED_LANGUAGES = new Set(["zh", "ja"]);
 
 // Whether a recording made with this voice carries a time for every word — what word
 // highlighting and word-level two-language reading need; without it a chapter reads at sentence
-// level. Cartesia and ElevenLabs return word timestamps with the audio. Kokoro's come from its
-// English tokenizer, and in its espeak languages from its phoneme durations aligned to the words
-// (scripts/phoneme_words.py) — which needs spaces between words, so not Mandarin. Piper's come from
-// its durations the same way, BgTTS's from its own cross-attention (scripts/attention_words.py),
+// level. Cartesia and ElevenLabs return word timestamps with the audio. Piper's come from its
+// phoneme durations aligned to the words (scripts/phoneme_words.py), BgTTS's from its own cross-attention (scripts/attention_words.py),
 // loudkit's from its generator's self-attention (scripts/loudkit_attention.py).
 // Pocket, MMS and the macOS voices give chunk boundaries only.
 export function voiceHasWordTiming(voiceId: string, language?: string | null): boolean {
@@ -241,15 +145,11 @@ export function voiceHasWordTiming(voiceId: string, language?: string | null): b
   const engine = engineForVoiceId(voiceId);
   if (engine === "cartesia") return true;
   // ElevenLabs times characters, and charactersToWords groups them at spaces — a sentence of
-  // Japanese would come back as one word. Kokoro's words come from the same spaces.
-  if (engine === "elevenlabs" || engine === "kokoro") {
+  // Japanese would come back as one word.
+  if (engine === "elevenlabs") {
     return !UNSPACED_LANGUAGES.has(language ?? languageOfStaticVoice(voiceId));
   }
   return false;
-}
-
-export function normalizeVoiceId(voiceId: string): string {
-  return voiceId.includes(":") ? voiceId : `kokoro:${voiceId}`;
 }
 
 export function sayVoiceToEntry(voice: { slug: string; name: string; locale: string }): Voice {

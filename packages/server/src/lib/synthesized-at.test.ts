@@ -42,9 +42,9 @@ describe("backfillSynthesizedAt", () => {
     const gone = crypto.randomUUID();
     const silent = crypto.randomUUID();
     await db.insert(chapters).values([
-      { id: old, bookId, index: 0, title: "a", rawText: "x", status: "done", audioPath: oldAudio, synthesizedWith: { voice: "af_heart", speed: 1 } },
+      { id: old, bookId, index: 0, title: "a", rawText: "x", status: "done", audioPath: oldAudio, synthesizedWith: { voice: "pocket:alba", speed: 1 } },
       { id: unsnapshotted, bookId, index: 1, title: "b", rawText: "x", status: "done", audioPath: oldAudio },
-      { id: dated, bookId, index: 2, title: "c", rawText: "x", status: "done", audioPath: oldAudio, synthesizedWith: { voice: "af_heart", at: "2026-10-01T00:00:00.000Z" } },
+      { id: dated, bookId, index: 2, title: "c", rawText: "x", status: "done", audioPath: oldAudio, synthesizedWith: { voice: "pocket:alba", at: "2026-10-01T00:00:00.000Z" } },
       { id: gone, bookId, index: 3, title: "d", rawText: "x", status: "done", audioPath: path.join(dir, "missing.m4a") },
       { id: silent, bookId, index: 4, title: "e", rawText: "x", status: "suspended" },
     ]);
@@ -57,9 +57,9 @@ describe("backfillSynthesizedAt", () => {
     expect(await backfillSynthesizedAt()).toBe(3);
 
     const byId = new Map((await db.select().from(chapters).where(eq(chapters.bookId, bookId))).map((c) => [c.id, c.synthesizedWith]));
-    expect(byId.get(old)).toEqual({ voice: "af_heart", speed: 1, at: made.toISOString() });
+    expect(byId.get(old)).toEqual({ voice: "pocket:alba", speed: 1, at: made.toISOString() });
     expect(byId.get(unsnapshotted)).toEqual({ at: made.toISOString() });
-    expect(byId.get(dated)).toEqual({ voice: "af_heart", at: "2026-10-01T00:00:00.000Z" });
+    expect(byId.get(dated)).toEqual({ voice: "pocket:alba", at: "2026-10-01T00:00:00.000Z" });
     expect(byId.get(gone)).toBeNull();
     expect(byId.get(silent)).toBeNull();
     const [v] = await db.select().from(chapterVariants).where(eq(chapterVariants.id, variant.id));

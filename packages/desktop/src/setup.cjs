@@ -202,11 +202,24 @@ async function syncPiper(home, onOutput) {
   });
 }
 
-async function fetchEssentialModels(python, home, onOutput) {
-  await sh(python, [path.join(home, "scripts", "models.py"), "--essential"], {
+// Pocket TTS is the default narrator. It needs numpy 2, so it gets a venv of its own like Piper,
+// and its French model is cached here because synthesis runs offline.
+function pocketPython(home) {
+  return path.join(home, "python-pocket", "bin", "python");
+}
+
+async function syncPocket(home, onOutput) {
+  const uv = await ensureUv(home, onOutput);
+  const venv = path.join(home, "python-pocket");
+  await sh(uv, ["venv", "--python", "3.12", "--allow-existing", venv], { env: uvEnv(home), onOutput });
+  await sh(uv, ["pip", "install", "--python", pocketPython(home), "-r", path.join(home, "scripts", "requirements-pocket.txt")], {
+    env: uvEnv(home),
+    onOutput,
+  });
+  await sh(pocketPython(home), [path.join(home, "scripts", "synthesize_pocket_tts.py"), "--cache-only", "--language", "french_24l"], {
     env: { HF_HUB_OFFLINE: "0" },
     onOutput,
   });
 }
 
-module.exports = { MIN_MACOS, macosVersion, unsupportedMac, missingTools, installHint, toolPath, syncPiper, piperPython, stageRuntime, pythonBin, uvEnv, syncPython, fetchEssentialModels, failureMessage };
+module.exports = { MIN_MACOS, macosVersion, unsupportedMac, missingTools, installHint, toolPath, syncPiper, piperPython, stageRuntime, pythonBin, uvEnv, syncPython, syncPocket, pocketPython, failureMessage };

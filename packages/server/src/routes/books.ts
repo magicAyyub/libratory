@@ -516,7 +516,7 @@ export const booksRouter = router({
       z.object({
         title: z.string().min(1),
         filename: z.string().min(1),
-        voice: z.string().default("kokoro:af_heart"),
+        voice: z.string().default(env.DEFAULT_VOICE),
         speed: z.number().min(0.5).max(2.0).default(1.0),
         skipSynthesis: z.boolean().default(false),
       })

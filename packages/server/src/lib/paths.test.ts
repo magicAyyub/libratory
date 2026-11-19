@@ -10,7 +10,6 @@ import { fromStoredPath, outputDir, scriptPath, toStoredPath, uploadsDir } from 
 // the server spawns belongs in this list — hn-top10.mjs was missed by the original conversion and
 // kept walking up from import.meta.url, which resolves to nothing in a compiled binary.
 const SPAWNED = [
-  "synthesize.py",
   "synthesize_bgtts.py",
   "synthesize_piper_tts.py",
   "synthesize_mms_tts.py",
@@ -28,7 +27,7 @@ describe("scriptPath", () => {
   });
 
   it("is absolute, so a worker's working directory cannot change what gets run", () => {
-    expect(scriptPath("synthesize.py").startsWith("/")).toBe(true);
+    expect(scriptPath("synthesize_pocket_tts.py").startsWith("/")).toBe(true);
   });
 });
 

@@ -75,7 +75,7 @@ describe("booksRouter.updateSettings", () => {
       title: "Book",
       filename: "book.pdf",
       pdfPath: "/tmp/book.pdf",
-      voice: "kokoro:af_heart",
+      voice: "pocket:alba",
       speed: 1.0,
     });
 

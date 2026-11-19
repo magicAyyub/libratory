@@ -40,11 +40,6 @@ vi.mock("node:readline", () => ({
   }),
 }));
 
-vi.mock("./kokoro.ts", () => ({
-  synthesize: vi.fn(async () => {}),
-  KokoroAbortedError: class KokoroAbortedError extends Error {},
-}));
-
 import { getPreviewTextForVoice, synthesize } from "./tts.ts";
 
 describe("Pocket TTS previews", () => {

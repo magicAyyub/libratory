@@ -74,7 +74,6 @@ product, the upside is two extra voices out of 26.
 
 ## Other engines — NOT verified, check before relying on any of this
 
-- **Kokoro** (`kokoro:`) — believed Apache-2.0 weights, unverified in this pass.
 - **macOS `say`** (`say:`) — Apple system voices. Whether their output may be
   distributed commercially is **unknown and worth real scrutiny** before any paid
   service exposes this engine. Probably the highest-risk unexamined item here.
@@ -101,7 +100,7 @@ product, the upside is two extra voices out of 26.
 ## Business-model note that is not about licenses
 
 Flat per-length pricing across user-chosen engines is unbounded on the cost side: the
-marginal cost of one ~500k-character book ranges from ~free (Pocket-TTS, Kokoro, `say`)
+marginal cost of one ~500k-character book ranges from ~free (Pocket-TTS, `say`)
 through a few dollars (Cartesia) to $25–50 (ElevenLabs). A customer picking the most
 expensive engine spends our margin. The clean fixes are BYO-key for paid cloud engines
 and flat pricing only over the local ones.
@@ -136,7 +135,7 @@ attribution.
 2. Add an attribution page: Kyutai (CC-BY-4.0 weights), VCTK, Common Voice,
    alba-mackenna.
 3. Resolve the macOS `say` question before exposing that engine to paying users.
-4. Verify Kokoro and MMS licenses.
+4. Verify the MMS license.
 5. If cloning is offered: ToS + per-upload consent affirmation, per the Kyutai terms.
 6. Re-verify the voice table above — upstream may have re-sourced voices since
    2026-08-21. Re-derive it from `_ORIGINS_OF_PREDEFINED_VOICES` and the `tts-voices`

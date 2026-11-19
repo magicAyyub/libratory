@@ -145,7 +145,6 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--status", action="store_true")
     parser.add_argument("--capabilities", action="store_true")
-    parser.add_argument("--essential", action="store_true")
     parser.add_argument("--download")
     parser.add_argument("--download-all", action="store_true")
     args = parser.parse_args()
@@ -184,15 +183,6 @@ def main() -> int:
             finally:
                 stop.set()
                 reporter.join(timeout=3)
-        return 0
-
-    if args.essential:
-        # Kokoro is not in BUNDLES because it is not optional — without a voice there is no
-        # audiobook. It is the whole of what a first run must fetch before the app is useful.
-        # Skipped when already cached so callers can run it on every start — the Docker
-        # entrypoint does, and must come up offline once the volume holds the voice.
-        if not _hf_cached("hexgrad/Kokoro-82M"):
-            _hf_fetch("hexgrad/Kokoro-82M")
         return 0
 
     if args.capabilities:

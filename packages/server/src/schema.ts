@@ -171,7 +171,7 @@ export const books = pgTable("books", {
   status: text("status", {
     enum: ["pending", "extracting", "synthesizing", "assembling", "done", "failed", "suspended"],
   }).notNull().default("pending"),
-  voice: text("voice").notNull().default("af_heart"),
+  voice: text("voice").notNull().default("pocket:fr:estelle"),
   speed: real("speed").notNull().default(1.0),
   variantVoices: jsonb("variant_voices").$type<VariantVoices>(),
   error: text("error"),

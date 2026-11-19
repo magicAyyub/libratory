@@ -1,3 +1,4 @@
+import { env } from "../env.ts";
 import { readFile } from "node:fs/promises";
 import { db } from "../db.ts";
 import { books, type Book } from "../schema.ts";
@@ -42,7 +43,7 @@ export async function createEbookBook(bookId: string, input: CreateEbookBookInpu
       // Publisher templates often leave the package language at a default, so the text decides first
       language: detectLanguage(allText) ?? packageLanguage(parsed.language),
       origin: { type: "ebook", filename: input.filename },
-      voice: "kokoro:af_heart",
+      voice: env.DEFAULT_VOICE,
       skipSynthesis: true,
       folderId,
       profileId,
