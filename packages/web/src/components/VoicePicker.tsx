@@ -39,14 +39,16 @@ export function useVoiceLabel(selectedId: string): string {
       : engine === "elevenlabs" ? elevenlabsVoices.map(elevenlabsVoiceToEntry)
       : engine === "pocket" ? [
           ...(pocket?.custom ?? []).map(pocketCustomVoiceToEntry),
-          ...(pocket?.voices ?? []).map((voice) => pocketVoiceToEntry(voice, pocketLanguageOf(selectedId))),
+          ...[...(pocket?.nativeVoices[pocketLanguageOf(selectedId)] ?? []), ...(pocket?.voices ?? [])]
+            .map((voice) => pocketVoiceToEntry(voice, pocketLanguageOf(selectedId))),
         ]
       : [];
     return candidates.find((voice) => voice.id === selectedId)?.label ?? getVoiceLabel(selectedId);
   }, [selectedId, engine, sayVoices, cartesiaVoices, elevenlabsVoices, pocket]);
 }
 
-// `pocket:it:giovanni` — the middle segment is the language; bare and `custom:` ids are English.
+// `pocket:it:giovanni` — the middle segment is the language. Clones are matched on their whole id,
+// so the language here only matters for catalog voices.
 function pocketLanguageOf(voiceId: string): string {
   const rest = voiceId.slice("pocket:".length);
   const separator = rest.indexOf(":");

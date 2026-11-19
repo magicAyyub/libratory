@@ -4,7 +4,7 @@ import { chapters, chapterVariants, documents, type DocumentNarration, type Narr
 import { cuesFromSyncMap } from "./cues.ts";
 import type { CueGranularity } from "./reader-format.ts";
 import { readSyncMap } from "./sync-map.ts";
-import { POCKET_VOICES } from "./pocket.ts";
+import { POCKET_NATIVE_VOICES, POCKET_VOICES } from "./pocket.ts";
 import { kokoroVoiceGroups, narratorVoices, normalizeVoiceId } from "./voice-catalog.ts";
 
 // What a shelf row says about a file's narration — the level the reader can light, the running
@@ -34,7 +34,7 @@ export function voiceLabel(voiceId: string | null | undefined): string | null {
   switch (engine) {
     case "pocket":
       if (rest[0] === "custom") return "Cloned voice";
-      return POCKET_VOICES.find((v) => v.id === tail)?.name ?? titleCase(tail);
+      return [...POCKET_VOICES, ...Object.values(POCKET_NATIVE_VOICES).flat()].find((v) => v.id === tail)?.name ?? titleCase(tail);
     case "cartesia":
       return "Cartesia voice";
     case "say":

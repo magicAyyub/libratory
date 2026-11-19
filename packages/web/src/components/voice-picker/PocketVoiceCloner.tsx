@@ -2,19 +2,39 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PillToggle } from "../PillToggle.tsx";
 import { Button } from "../Button.tsx";
 
-const READING_SCRIPT =
+const ENGLISH_READING_SCRIPT =
   "The morning light came in sideways through the tall windows, and for a moment nobody spoke. " +
   "She turned the page slowly, weighing what to say next. Was it really the same house? " +
   "It had to be — the same crooked staircase, the same smell of rain on old wood. " +
   "Twenty years, and nothing had moved at all.";
 
+// A clone speaks best from a sample in the language it will read
+const READING_SCRIPTS: Record<string, string> = {
+  en: ENGLISH_READING_SCRIPT,
+  fr:
+    "La lumière du matin entrait de biais par les hautes fenêtres, et pendant un instant personne ne parla. " +
+    "Elle tourna lentement la page, cherchant ce qu'elle allait dire. Était-ce vraiment la même maison ? " +
+    "Il le fallait : le même escalier de travers, la même odeur de pluie sur le vieux bois. " +
+    "Vingt ans, et rien n'avait bougé.",
+};
+
 const MIN_SECONDS = 8;
 const TARGET_SECONDS = 20;
 
-type Props = { onAdded: () => void };
+type Props = {
+  languages: { code: string; label: string }[];
+  preferredLanguages: string[];
+  onAdded: () => void;
+};
 
-export function PocketVoiceCloner({ onAdded }: Props) {
+export function PocketVoiceCloner({ languages, preferredLanguages, onAdded }: Props) {
   const [open, setOpen] = useState(false);
+  const [pickedLanguage, setPickedLanguage] = useState<string | null>(null);
+  const language =
+    languages.find((candidate) => candidate.code === pickedLanguage)?.code
+    ?? preferredLanguages.find((code) => languages.some((candidate) => candidate.code === code))
+    ?? languages[0]?.code
+    ?? "en";
   const [mode, setMode] = useState<"upload" | "record">("record");
   const [name, setName] = useState("");
   const [consent, setConsent] = useState(false);
@@ -87,6 +107,7 @@ export function PocketVoiceCloner({ onAdded }: Props) {
       body.append("file", audio, mode === "record" ? "recording.webm" : (file as File).name);
       body.append("name", name);
       body.append("consent", String(consent));
+      body.append("language", language);
       const response = await fetch("/upload/pocket-voice", { method: "POST", body });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Voice import failed");
@@ -98,7 +119,7 @@ export function PocketVoiceCloner({ onAdded }: Props) {
     } finally {
       setBusy(false);
     }
-  }, [mode, recorded, file, name, consent, reset, onAdded]);
+  }, [mode, recorded, file, name, consent, language, reset, onAdded]);
 
   const hasAudio = mode === "record" ? recorded !== null : file !== null;
   const tooShort = mode === "record" && recorded !== null && elapsed < MIN_SECONDS;
@@ -130,6 +151,23 @@ export function PocketVoiceCloner({ onAdded }: Props) {
         </ul>
       </div>
 
+      {languages.length > 1 && (
+        <div className="space-y-1">
+          <p className="text-xs font-semibold text-(--text-secondary)">Language this voice will read</p>
+          <div className="flex flex-wrap gap-1" data-testid="pocket-clone-language">
+            {languages.map((candidate) => (
+              <PillToggle
+                key={candidate.code}
+                selected={language === candidate.code}
+                onClick={() => setPickedLanguage(candidate.code)}
+              >
+                {candidate.label}
+              </PillToggle>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-1">
         {(["record", "upload"] as const).map((id) => (
           <PillToggle key={id} selected={mode === id} onClick={() => setMode(id)}>
@@ -141,7 +179,7 @@ export function PocketVoiceCloner({ onAdded }: Props) {
       {mode === "record" ? (
         <div className="space-y-2">
           <p className="text-xs text-(--text-muted) italic leading-relaxed bg-(--bg-subtle) p-2 rounded">
-            {READING_SCRIPT}
+            {READING_SCRIPTS[language] ?? ENGLISH_READING_SCRIPT}
           </p>
           <div className="flex items-center gap-2">
             <Button

@@ -22,7 +22,9 @@ export type PocketLanguage = {
 
 // Kyutai ships one checkpoint per language. The "_24l" builds are 24-layer previews (641 MB of
 // weights vs 209 MB) and upstream flags them as not-yet-distilled; French has no distilled build.
-const ENGLISH: PocketLanguage = { code: "en", label: "English", model: "english", approxMb: 370, realtimeFactor: 12 };
+// Pinned by date: since pocket-tts 3 the bare "english" name points at a newer checkpoint, and this
+// one's weights are what existing clones were encoded against.
+const ENGLISH: PocketLanguage = { code: "en", label: "English", model: "english_2026-04", approxMb: 370, realtimeFactor: 12 };
 
 export const POCKET_LANGUAGES: PocketLanguage[] = [
   ENGLISH,
@@ -81,6 +83,38 @@ export const POCKET_VOICES: PocketVoice[] = [
 
 const POCKET_VOICE_IDS = new Set(POCKET_VOICES.map((voice) => voice.id));
 
+// Native speakers for a language, encoded locally from Kyutai's recordings (NATIVE_VOICES in
+// synthesize_pocket_tts.py). Unlike the catalog they exist for one checkpoint only.
+export const POCKET_NATIVE_VOICES: Record<string, PocketVoice[]> = {
+  fr: [
+    { id: "fabien", name: "Fabien", license: "CC0", note: "French speaker" },
+    ...Array.from({ length: 24 }, (_, index): PocketVoice => {
+      const number = String(index + 1).padStart(2, "0");
+      return { id: `voix-${number}`, name: `Voix ${number}`, license: "CC BY 4.0", note: "French speaker, CML-TTS" };
+    }),
+  ],
+};
+
+function nativePocketVoice(languageCode: string, voiceId: string): PocketVoice | null {
+  return POCKET_NATIVE_VOICES[languageCode]?.find((voice) => voice.id === voiceId) ?? null;
+}
+
+export function pocketNativeVoiceStatePath(language: PocketLanguage, voiceId: string): string {
+  return path.join(pocketVoicesDir, language.model, `${voiceId}.safetensors`);
+}
+
+// Encoding needs the gated weights, so a native voice is only offered once its state is on disk.
+export async function listInstalledPocketNativeVoices(): Promise<Record<string, PocketVoice[]>> {
+  const installed: Record<string, PocketVoice[]> = {};
+  for (const [code, voices] of Object.entries(POCKET_NATIVE_VOICES)) {
+    const language = pocketLanguageByCode(code);
+    if (!language) continue;
+    const present = await Promise.all(voices.map((voice) => pathExists(pocketNativeVoiceStatePath(language, voice.id))));
+    installed[code] = voices.filter((_, index) => present[index]);
+  }
+  return installed;
+}
+
 export function isPocketCatalogVoice(voiceId: string): boolean {
   return POCKET_VOICE_IDS.has(voiceId);
 }
@@ -138,7 +172,7 @@ export async function pocketCloningAvailable(): Promise<boolean> {
     return false;
   }
   const found = await Promise.all(
-    entries.map((entry) => pathExists(path.join(snapshots, entry, "languages", "english", "model.safetensors"))),
+    entries.map((entry) => pathExists(path.join(snapshots, entry, "languages", DEFAULT_POCKET_LANGUAGE.model, "model.safetensors"))),
   );
   return found.some(Boolean);
 }
@@ -147,12 +181,15 @@ const CUSTOM_VOICE_PREFIX = "custom:";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export type ParsedPocketVoice =
-  | { kind: "custom"; voice: string }
-  | { kind: "catalog"; language: PocketLanguage; voiceName: string };
+  | { kind: "custom"; language: PocketLanguage; voice: string }
+  | { kind: "catalog"; language: PocketLanguage; voiceName: string }
+  | { kind: "native"; language: PocketLanguage; voiceName: string };
 
 // `pocket:alba` stays English for ids stored before languages existed; `custom` is reserved.
 export function parsePocketVoice(voice: string): ParsedPocketVoice | null {
-  if (isPocketCustomVoice(voice)) return { kind: "custom", voice };
+  const custom = parseCustomVoice(voice);
+  if (custom) return { kind: "custom", language: custom.language, voice };
+  if (voice.startsWith(CUSTOM_VOICE_PREFIX)) return null;
 
   const separator = voice.indexOf(":");
   if (separator === -1) {
@@ -163,23 +200,36 @@ export function parsePocketVoice(voice: string): ParsedPocketVoice | null {
 
   const language = pocketLanguageByCode(voice.slice(0, separator));
   const voiceName = voice.slice(separator + 1);
-  if (!language || !isPocketCatalogVoice(voiceName)) return null;
+  if (!language) return null;
+  if (nativePocketVoice(language.code, voiceName)) return { kind: "native", language, voiceName };
+  if (!isPocketCatalogVoice(voiceName)) return null;
   return { kind: "catalog", language, voiceName };
 }
 
+// `custom:<uuid>` is an English clone, the form every clone had before they carried a language;
+// `custom:<code>:<uuid>` was encoded against that language's checkpoint.
+function parseCustomVoice(voice: string): { language: PocketLanguage; id: string } | null {
+  if (!voice.startsWith(CUSTOM_VOICE_PREFIX)) return null;
+  const parts = voice.slice(CUSTOM_VOICE_PREFIX.length).split(":");
+  const id = parts.at(-1) ?? "";
+  if (parts.length > 2 || !UUID_PATTERN.test(id)) return null;
+  const language = parts.length === 2 ? pocketLanguageByCode(parts[0] ?? "") : DEFAULT_POCKET_LANGUAGE;
+  return language ? { language, id } : null;
+}
+
 export function isPocketCustomVoice(voice: string): boolean {
-  return voice.startsWith(CUSTOM_VOICE_PREFIX) && UUID_PATTERN.test(voice.slice(CUSTOM_VOICE_PREFIX.length));
+  return parseCustomVoice(voice) !== null;
 }
 
 export function customVoiceStatePath(voice: string): string {
-  return path.join(pocketVoicesDir, `${voice.slice(CUSTOM_VOICE_PREFIX.length)}.safetensors`);
+  const id = parseCustomVoice(voice)?.id;
+  if (!id) throw new Error("Invalid cloned voice id");
+  return path.join(pocketVoicesDir, `${id}.safetensors`);
 }
 
-// A cloned voice's state is encoded against the English checkpoint, so clones always run there.
+// A cloned voice's state only fits the checkpoint it was encoded against, which its id names.
 export function pocketLanguageArgs(voice: string): string[] {
-  const parsed = parsePocketVoice(voice);
-  const model = parsed?.kind === "catalog" ? parsed.language.model : DEFAULT_POCKET_LANGUAGE.model;
-  return ["--language", model];
+  return ["--language", (parsePocketVoice(voice)?.language ?? DEFAULT_POCKET_LANGUAGE).model];
 }
 
 // Catalog voices pass through as bare names (the language rides in --language); cloned voices
@@ -187,6 +237,13 @@ export function pocketLanguageArgs(voice: string): string[] {
 export async function resolvePocketVoiceArg(voice: string): Promise<string> {
   if (!isPocketCustomVoice(voice)) {
     const parsed = parsePocketVoice(voice);
+    if (parsed?.kind === "native") {
+      const statePath = pocketNativeVoiceStatePath(parsed.language, parsed.voiceName);
+      if (!(await pathExists(statePath))) {
+        throw new Error("That voice is not prepared on this machine — run pnpm run setup or pick another voice");
+      }
+      return statePath;
+    }
     return parsed?.kind === "catalog" ? parsed.voiceName : voice;
   }
   const statePath = customVoiceStatePath(voice);

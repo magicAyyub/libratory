@@ -1,7 +1,12 @@
 import { z } from "zod";
 
 import { router, publicProcedure } from "../trpc.ts";
-import { POCKET_VOICES, pocketEngineInstalled, pocketLanguageByCode } from "../lib/pocket.ts";
+import {
+  POCKET_VOICES,
+  listInstalledPocketNativeVoices,
+  pocketEngineInstalled,
+  pocketLanguageByCode,
+} from "../lib/pocket.ts";
 import {
   listPocketLanguages,
   pocketCloningState,
@@ -12,12 +17,13 @@ import { deleteCustomPocketVoice, listCustomPocketVoices } from "../lib/pocket-v
 
 export const pocketVoicesRouter = router({
   list: publicProcedure.query(async () => {
-    const [custom, installed, cloning] = await Promise.all([
+    const [custom, nativeVoices, installed, cloning] = await Promise.all([
       listCustomPocketVoices(),
+      listInstalledPocketNativeVoices(),
       pocketEngineInstalled(),
       pocketCloningState(),
     ]);
-    return { voices: POCKET_VOICES, custom, installed, cloning };
+    return { voices: POCKET_VOICES, nativeVoices, custom, installed, cloning };
   }),
 
   languages: publicProcedure.query(() => listPocketLanguages()),

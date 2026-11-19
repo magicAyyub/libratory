@@ -184,6 +184,20 @@ else
 fi
 "$POCKET_PY" "$REPO_DIR/scripts/synthesize_pocket_tts.py" --cache-only
 
+# Weights are pinned per pocket-tts release and synthesis runs offline, so every language already
+# downloaded has to be fetched again after a version bump. French also gets its native voices.
+POCKET_DATA_DIR="$(grep -E '^DATA_DIR=.+' "$REPO_DIR/.env" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r')"
+POCKET_DATA_DIR="${POCKET_DATA_DIR:-./data}"
+# The server runs from packages/server, which is what a relative DATA_DIR is relative to
+case "$POCKET_DATA_DIR" in /*) ;; *) POCKET_DATA_DIR="$REPO_DIR/packages/server/$POCKET_DATA_DIR" ;; esac
+HF_HUB_CACHE_DIR="${HF_HOME:-$HOME/.cache/huggingface}/hub"
+for POCKET_MODEL in spanish italian german portuguese french_24l; do
+  if compgen -G "$HF_HUB_CACHE_DIR/models--kyutai--pocket-tts*/snapshots/*/languages/$POCKET_MODEL/model.safetensors" >/dev/null; then
+    "$POCKET_PY" "$REPO_DIR/scripts/synthesize_pocket_tts.py" --cache-only --language "$POCKET_MODEL" \
+      --native-voices-dir "$POCKET_DATA_DIR/pocket-voices"
+  fi
+done
+
 echo ""
 # Separate venv: onnxruntime and numpy 2 must not disturb the main env's pins. ~150 MB plus a 63 MB voice.
 echo "Creating Piper environment at .venv-piper..."

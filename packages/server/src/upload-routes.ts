@@ -234,6 +234,7 @@ export function registerUploadRoutes(fastify: FastifyInstance) {
     let name = "";
     let consented = false;
     let received = false;
+    let language: string | undefined;
     for await (const part of request.parts()) {
       if (part.type === "file") {
         await pipeline(part.file, createWriteStream(scratchPath));
@@ -242,6 +243,8 @@ export function registerUploadRoutes(fastify: FastifyInstance) {
         name = String((part as any).value ?? "");
       } else if (part.fieldname === "consent") {
         consented = String((part as any).value) === "true";
+      } else if (part.fieldname === "language") {
+        language = String((part as any).value ?? "");
       }
     }
 
@@ -252,7 +255,7 @@ export function registerUploadRoutes(fastify: FastifyInstance) {
           error: "Kyutai's terms prohibit cloning a voice without the speaker's consent — confirm you have it",
         });
       }
-      return reply.send(await createCustomPocketVoice(scratchPath, name));
+      return reply.send(await createCustomPocketVoice(scratchPath, name, language));
     } catch (error) {
       return reply.code(400).send({ error: error instanceof Error ? error.message : "Voice import failed" });
     } finally {

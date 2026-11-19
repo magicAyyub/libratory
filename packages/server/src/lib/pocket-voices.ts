@@ -7,7 +7,15 @@ import { randomUUID } from "node:crypto";
 import { parseFile } from "music-metadata";
 
 import { pocketVoicesDir } from "./paths.ts";
-import { POCKET_SCRIPT, isValidCustomVoiceId, pocketCloningAvailable, pocketPython } from "./pocket.ts";
+import {
+  DEFAULT_POCKET_LANGUAGE,
+  POCKET_SCRIPT,
+  isValidCustomVoiceId,
+  pocketCloningAvailable,
+  pocketLanguageByCode,
+  pocketLanguageInstalled,
+  pocketPython,
+} from "./pocket.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -16,6 +24,8 @@ export type CustomPocketVoice = {
   name: string;
   createdAt: string;
   seconds: number;
+  /** Code of the checkpoint the voice was encoded against. */
+  language: string;
 };
 
 // Below this the model has too little material and the clone drifts toward the catalog voice
@@ -38,7 +48,9 @@ export async function listCustomPocketVoices(): Promise<CustomPocketVoice[]> {
     entries.filter((name) => name.endsWith(".json")).map(async (entry) => {
       try {
         const meta = JSON.parse(await readFile(path.join(pocketVoicesDir, entry), "utf-8")) as CustomPocketVoice;
-        return present.has(`${meta.id}.safetensors`) ? meta : null;
+        if (!present.has(`${meta.id}.safetensors`)) return null;
+        // Clones made before they carried a language were all encoded against English
+        return { ...meta, language: meta.language ?? DEFAULT_POCKET_LANGUAGE.code };
       } catch {
         return null;
       }
@@ -49,7 +61,16 @@ export async function listCustomPocketVoices(): Promise<CustomPocketVoice[]> {
 
 // Browser recordings arrive as webm/opus or mp4/aac, and pocket-tts reads WAV with a hardcoded
 // int16 reader — normalising through ffmpeg first covers both.
-export async function createCustomPocketVoice(sourcePath: string, name: string): Promise<CustomPocketVoice> {
+export async function createCustomPocketVoice(
+  sourcePath: string,
+  name: string,
+  languageCode: string = DEFAULT_POCKET_LANGUAGE.code,
+): Promise<CustomPocketVoice> {
+  const language = pocketLanguageByCode(languageCode);
+  if (!language) throw new Error(`Unknown Pocket TTS language: ${languageCode}`);
+  if (!(await pocketLanguageInstalled(language.model))) {
+    throw new Error(`Download the ${language.label} voices first, then clone this voice`);
+  }
   if (!(await pocketCloningAvailable())) {
     throw new Error("Voice cloning weights are not installed — download them from Your voices in the voice picker");
   }
@@ -79,6 +100,7 @@ export async function createCustomPocketVoice(sourcePath: string, name: string):
       POCKET_SCRIPT,
       "--export-voice", wavPath,
       "--voice-out", statePath,
+      "--language", language.model,
     ], { timeout: 300_000, env: { ...process.env, HF_HUB_OFFLINE: "1" } });
 
     const meta: CustomPocketVoice = {
@@ -86,6 +108,7 @@ export async function createCustomPocketVoice(sourcePath: string, name: string):
       name: name.trim() || "Untitled voice",
       createdAt: new Date().toISOString(),
       seconds: Math.round(seconds * 10) / 10,
+      language: language.code,
     };
     await writeFile(metadataPath(id), JSON.stringify(meta), "utf-8");
     return meta;

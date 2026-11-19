@@ -128,7 +128,9 @@ export function VoiceLibraryModal({
     () =>
       pocketLanguages
         .filter((language) => language.installed)
-        .flatMap((language) => (pocket?.voices ?? []).map((voice) => pocketVoiceToEntry(voice, language.code))),
+        .flatMap((language) =>
+          [...(pocket?.nativeVoices[language.code] ?? []), ...(pocket?.voices ?? [])]
+            .map((voice) => pocketVoiceToEntry(voice, language.code))),
     [pocket, pocketLanguages],
   );
 
@@ -385,7 +387,7 @@ export function VoiceLibraryModal({
                       action={
                         <button
                           type="button"
-                          onClick={() => deleteCustomVoice.mutate({ id: voice.id.slice("pocket:custom:".length) })}
+                          onClick={() => deleteCustomVoice.mutate({ id: voice.id.split(":").at(-1) ?? "" })}
                           disabled={deleteCustomVoice.isPending}
                           title={`Delete ${voice.label}`}
                           aria-label={`Delete ${voice.label}`}
@@ -398,7 +400,11 @@ export function VoiceLibraryModal({
                     />
                   ))}
                   {pocket?.cloning.available ? (
-                    <PocketVoiceCloner onAdded={() => void refetchPocket()} />
+                    <PocketVoiceCloner
+                      languages={pocketLanguages.filter((candidate) => candidate.installed)}
+                      preferredLanguages={priorityLanguages}
+                      onAdded={() => void refetchPocket()}
+                    />
                   ) : (
                     pocket && <PocketCloningNotice cloning={pocket.cloning} />
                   )}

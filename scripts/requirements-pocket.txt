@@ -8,8 +8,6 @@ annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
     # via starlette
-beartype==0.22.9
-    # via pocket-tts
 certifi==2026.10.23
     # via requests
 cffi==2.1.1
@@ -39,7 +37,9 @@ h11==0.16.0
 hf-xet==1.6.0 ; platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'
     # via huggingface-hub
 huggingface-hub==0.36.2
-    # via pocket-tts
+    # via
+    #   pocket-tts
+    #   tokenizers
 idna==3.19
     # via
     #   anyio
@@ -64,7 +64,7 @@ numpy==2.5.2
     #   soundfile
 packaging==26.3
     # via huggingface-hub
-pocket-tts==2.1.0
+pocket-tts==4.0.1
     # via -r scripts/requirements-pocket.in
 pycparser==3.0 ; implementation_name != 'PyPy'
     # via cffi
@@ -102,6 +102,8 @@ starlette==1.6.0
     # via fastapi
 sympy==1.14.0
     # via torch
+tokenizers==0.23.3
+    # via pocket-tts
 torch==2.13.0 ; sys_platform == 'darwin'
     # via
     #   -r scripts/requirements-pocket.in

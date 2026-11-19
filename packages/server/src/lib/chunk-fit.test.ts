@@ -223,6 +223,39 @@ print(json.dumps({
     });
   });
 
+  it("removes French typos that are invisible on the page", () => {
+    const program = `
+import json, sys
+sys.path.insert(0, ${JSON.stringify(scriptPath(""))})
+from pocket_text import synthesis_text_for
+print(json.dumps([
+    synthesis_text_for(text, "french_24l")
+    for text in ["l\\u02bcart", "pre\\u0302t", "dif\\ufb01cile", "af\\u00adfaire\\u200b", "dix\\u00a0mille", "c\\u2011est"]
+]))
+`;
+    const run = spawnSync("python3", ["-c", program], { encoding: "utf-8" });
+    if (run.status !== 0) throw new Error(run.stderr);
+    expect(JSON.parse(run.stdout)).toEqual(["l'art", "prêt", "difficile", "affaire", "dix mille", "c-est"]);
+  });
+
+  it("discards resumed audio made by another engine release", () => {
+    const program = `
+import json, os, sys, tempfile
+sys.path.insert(0, ${JSON.stringify(scriptPath(""))})
+from chunk_io import write_chunk_manifest
+d = tempfile.mkdtemp()
+write_chunk_manifest(d, ["Texte."], ["Texte."], "pocket-tts 2.1.0 french_24l")
+open(os.path.join(d, "chunk-001.wav"), "w").close()
+write_chunk_manifest(d, ["Texte."], ["Texte."], "pocket-tts 2.1.0 french_24l")
+kept = os.path.exists(os.path.join(d, "chunk-001.wav"))
+write_chunk_manifest(d, ["Texte."], ["Texte."], "pocket-tts 4.0.1 french_24l")
+print(json.dumps([kept, os.path.exists(os.path.join(d, "chunk-001.wav"))]))
+`;
+    const run = spawnSync("python3", ["-c", program], { encoding: "utf-8" });
+    if (run.status !== 0) throw new Error(run.stderr);
+    expect(JSON.parse(run.stdout)).toEqual([true, false]);
+  });
+
   it("invalidates resumed audio when the spoken text changes but keeps original chunk text", () => {
     const program = `
 import json, os, sys, tempfile

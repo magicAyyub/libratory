@@ -45,7 +45,16 @@ vi.mock("./kokoro.ts", () => ({
   KokoroAbortedError: class KokoroAbortedError extends Error {},
 }));
 
-import { synthesize } from "./tts.ts";
+import { getPreviewTextForVoice, synthesize } from "./tts.ts";
+
+describe("Pocket TTS previews", () => {
+  it("speaks French for native and cloned French voices", async () => {
+    const french = await getPreviewTextForVoice("pocket:fr:estelle");
+    expect(await getPreviewTextForVoice("pocket:fr:voix-07")).toBe(french);
+    expect(await getPreviewTextForVoice("pocket:custom:fr:5e509238-95e1-41a0-9818-ec49f27e1bf3")).toBe(french);
+    expect(await getPreviewTextForVoice("pocket:custom:5e509238-95e1-41a0-9818-ec49f27e1bf3")).not.toBe(french);
+  });
+});
 
 describe("Pocket TTS chunking", () => {
   beforeEach(() => {

@@ -245,7 +245,7 @@ export async function getPreviewTextForVoice(voice: string, language: string | n
   }
   if (resolved.engine === "pocket") {
     const parsed = parsePocketVoice(resolved.voice);
-    return previewTextFor(parsed?.kind === "catalog" ? parsed.language.code : "en");
+    return previewTextFor(parsed?.language.code ?? "en");
   }
   if (resolved.engine === "loudkit") {
     return firstSentence(previewTextFor(loudkitVoiceLanguage(resolved.voice) ?? "en"));

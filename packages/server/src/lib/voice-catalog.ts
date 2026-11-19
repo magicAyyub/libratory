@@ -321,15 +321,17 @@ export function pocketVoiceToEntry(
 
 export const POCKET_CUSTOM_PREFIX = "pocket:custom:";
 
-export function pocketCustomVoiceToEntry(voice: { id: string; name: string; seconds: number }): Voice {
+// English keeps the bare form, so ids already saved on books still resolve.
+export function pocketCustomVoiceToEntry(voice: { id: string; name: string; seconds: number; language?: string }): Voice {
+  const language = voice.language ?? "en";
   return {
-    id: `${POCKET_CUSTOM_PREFIX}${voice.id}`,
+    id: `${POCKET_CUSTOM_PREFIX}${language === "en" ? "" : `${language}:`}${voice.id}`,
     label: voice.name,
     gender: null,
     grade: "Cloned",
     supportsSpeed: false,
-    note: `${voice.seconds}s reference`,
-    language: "en",
+    note: `${language.toUpperCase()} · ${voice.seconds}s reference`,
+    language,
     engine: "pocket",
     requiresEngine: "pocket",
   };

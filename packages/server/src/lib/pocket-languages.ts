@@ -3,12 +3,14 @@ import {
   POCKET_LANGUAGES,
   POCKET_SCRIPT,
   pocketCloningAvailable,
+  POCKET_NATIVE_VOICES,
   pocketLanguageInstalled,
   pocketPython,
   type PocketLanguage,
 } from "./pocket.ts";
 import { env, envFilePath } from "../env.ts";
 import { DownloadTracker } from "./downloads.ts";
+import { pocketVoicesDir } from "./paths.ts";
 
 export type PocketLanguageState = {
   code: string;
@@ -41,7 +43,13 @@ export async function listPocketLanguages(): Promise<PocketLanguageState[]> {
 }
 
 export function startPocketLanguageDownload(language: PocketLanguage): { started: boolean } {
-  return downloads.start(language.code, pocketPython(), [POCKET_SCRIPT, "--cache-only", "--language", language.model]);
+  return downloads.start(language.code, pocketPython(), [
+    POCKET_SCRIPT,
+    "--cache-only",
+    "--language",
+    language.model,
+    ...(POCKET_NATIVE_VOICES[language.code] ? ["--native-voices-dir", pocketVoicesDir] : []),
+  ]);
 }
 
 const CLONING = "cloning";

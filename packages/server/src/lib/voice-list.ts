@@ -18,7 +18,7 @@ import { listSayVoices } from "./say-voices.ts";
 import { listCartesiaVoices } from "./cartesia.ts";
 import { listElevenLabsVoices } from "./elevenlabs.ts";
 import { listCustomPocketVoices } from "./pocket-voices.ts";
-import { POCKET_VOICES } from "./pocket.ts";
+import { POCKET_VOICES, listInstalledPocketNativeVoices } from "./pocket.ts";
 import { installedLocalEngines } from "./tts.ts";
 import { listPocketLanguages } from "./pocket-languages.ts";
 
@@ -60,12 +60,13 @@ function listed(voice: Voice, engine: VoiceEngine, language: string | undefined)
 // A voice whose engine env was never built is left out, as an undownloaded Pocket language is.
 export async function listAllVoices(filter: { language?: string; engine?: VoiceEngine } = {}): Promise<ListedVoice[]> {
   const settle = async <T,>(run: () => Promise<T[]>): Promise<T[]> => run().catch(() => []);
-  const [say, cartesia, elevenlabs, customPocket, pocketLanguages] = await Promise.all([
+  const [say, cartesia, elevenlabs, customPocket, pocketLanguages, nativePocket] = await Promise.all([
     settle(listSayVoices),
     settle(listCartesiaVoices),
     settle(listElevenLabsVoices),
     settle(listCustomPocketVoices),
     settle(listPocketLanguages),
+    listInstalledPocketNativeVoices().catch((): Record<string, typeof POCKET_VOICES> => ({})),
   ]);
 
   // Static entries carry no language of their own; it is filled in before the language filter runs
@@ -79,7 +80,7 @@ export async function listAllVoices(filter: { language?: string; engine?: VoiceE
     ...loudkitVoices.map(tagged("loudkit")),
     ...pocketLanguages
       .filter((l) => l.installed)
-      .flatMap((l) => POCKET_VOICES.map((v) => pocketVoiceToEntry(v, l.code)))
+      .flatMap((l) => [...(nativePocket[l.code] ?? []), ...POCKET_VOICES].map((v) => pocketVoiceToEntry(v, l.code)))
       .map(tagged("pocket")),
     ...customPocket.map(pocketCustomVoiceToEntry).map(tagged("pocket")),
     ...say.map(sayVoiceToEntry).map(tagged("say")),

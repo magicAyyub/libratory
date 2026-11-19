@@ -25,6 +25,7 @@ def write_chunk_manifest(
     chunks_dir: str,
     chunks: list[str],
     synthesis_texts: list[str] | None = None,
+    synthesis_key: str | None = None,
 ) -> None:
     os.makedirs(chunks_dir, exist_ok=True)
     if synthesis_texts is not None and len(synthesis_texts) != len(chunks):
@@ -52,6 +53,8 @@ def write_chunk_manifest(
             old_synthesis_text = entry.get("synthesisText", entry["text"])
             if old_synthesis_text != synthesis_texts[keep]:
                 break
+            if synthesis_key is not None and entry.get("synthesisKey") != synthesis_key:
+                break
             keep += 1
 
         for name in os.listdir(chunks_dir):
@@ -65,6 +68,7 @@ def write_chunk_manifest(
             "index": index,
             "text": chunk,
             **({"synthesisText": synthesis_texts[index - 1]} if synthesis_texts is not None else {}),
+            **({"synthesisKey": synthesis_key} if synthesis_key is not None else {}),
         }
         for index, chunk in enumerate(chunks, start=1)
     ]
