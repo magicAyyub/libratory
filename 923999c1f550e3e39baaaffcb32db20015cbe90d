@@ -1,0 +1,4 @@
+Reviewed: manual
+Outcome: Same content as the two high reviews of the Pocket TTS work, with attribution removed from commit messages. Dependency fix checked by frozen install, typecheck, pnpm audit and uv audit.
+By: ayouba
+At: 2026-11-19T02:15:38.569Z
