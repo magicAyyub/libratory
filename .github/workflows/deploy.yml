@@ -26,7 +26,8 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    # A fork's main must never publish a release
+    if: github.repository == 'subev/libratory' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
     runs-on: ubuntu-latest
     # Holds TAP_TOKEN beside the signing secrets
     environment: release

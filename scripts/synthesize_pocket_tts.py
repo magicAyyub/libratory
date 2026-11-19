@@ -164,8 +164,16 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.cache_only:
+        # Every language gets its attempt; one failing must not cost the others
+        failed = False
         for language in [args.language, *args.extra_language]:
-            cache_models(language, args.require_cloning, args.native_voices_dir)
+            try:
+                cache_models(language, args.require_cloning, args.native_voices_dir)
+            except (Exception, SystemExit) as exc:
+                failed = True
+                print(f"error: could not cache {language}: {exc}", file=sys.stderr)
+        if failed:
+            sys.exit(1)
         return
 
     if args.export_voice:

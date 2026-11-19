@@ -1060,8 +1060,12 @@ export const booksRouter = router({
         .where(and(eq(chapters.bookId, input.id), eq(chapters.selected, true)))
         .orderBy(asc(chapters.index));
 
-      // A chapter still stopping would race its old run for the row, so it waits for the next pass
-      const processable = selectedChapters.filter((ch) => ORIGINAL_SYNTHESIZABLE.includes(ch.status) && !synthesisRunning(ch.id));
+      const processable = selectedChapters.filter((ch) => ORIGINAL_SYNTHESIZABLE.includes(ch.status));
+
+      // Requeueing one would race its old run for the row
+      if (processable.some((ch) => synthesisRunning(ch.id))) {
+        throw new Error("A selected chapter is still stopping — try again in a moment");
+      }
 
       if (processable.length === 0) {
         throw new Error("No selected chapters are ready for synthesis");

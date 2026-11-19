@@ -104,6 +104,12 @@ export function pocketNativeVoiceStatePath(language: PocketLanguage, voiceId: st
 }
 
 // Encoding needs the gated weights, so a native voice is only offered once its state is on disk.
+export async function pocketNativeVoicesPrepared(language: PocketLanguage): Promise<boolean> {
+  const voices = POCKET_NATIVE_VOICES[language.code] ?? [];
+  const present = await Promise.all(voices.map((voice) => pathExists(pocketNativeVoiceStatePath(language, voice.id))));
+  return present.every(Boolean);
+}
+
 export async function listInstalledPocketNativeVoices(): Promise<Record<string, PocketVoice[]>> {
   const installed: Record<string, PocketVoice[]> = {};
   for (const [code, voices] of Object.entries(POCKET_NATIVE_VOICES)) {

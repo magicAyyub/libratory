@@ -411,7 +411,7 @@ export function VoiceLibraryModal({
                         preferredLanguages={priorityLanguages}
                         onAdded={() => void refetchPocket()}
                       />
-                      {pocket.cloning.missing.length > 0 && pocket.cloning.tokenSet && (
+                      {pocket.cloning.missing.length > 0 && (
                         <PocketCloningNotice cloning={pocket.cloning} />
                       )}
                     </>

@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "../db.ts";
 import { books } from "../schema.ts";
+import { parsePocketVoice, pocketEngineInstalled, pocketLanguageInstalled } from "./pocket.ts";
 import { parseTtsVoice } from "./tts.ts";
 
 // The voice a synthesis of this lane will use — a variant's own, else the book's, as the worker
@@ -10,5 +11,12 @@ import { parseTtsVoice } from "./tts.ts";
 export async function assertLaneVoiceUsable(bookId: string, variantKey?: string): Promise<void> {
   const [book] = await db.select({ voice: books.voice, variantVoices: books.variantVoices }).from(books).where(eq(books.id, bookId));
   if (!book) throw new Error("Book not found");
-  parseTtsVoice((variantKey ? book.variantVoices?.[variantKey]?.voice : undefined) ?? book.voice);
+  const parsed = parseTtsVoice((variantKey ? book.variantVoices?.[variantKey]?.voice : undefined) ?? book.voice);
+  if (parsed.engine !== "pocket") return;
+
+  // Synthesis runs offline, so a language not downloaded yet would fail after the audio was cleared
+  const language = parsePocketVoice(parsed.voice)?.language;
+  if (language && (await pocketEngineInstalled()) && !(await pocketLanguageInstalled(language.model))) {
+    throw new Error(`Download the ${language.label} Pocket TTS voices first, or pick another voice`);
+  }
 }

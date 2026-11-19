@@ -5,6 +5,7 @@ import {
   pocketCloningAvailable,
   POCKET_NATIVE_VOICES,
   pocketLanguageInstalled,
+  pocketNativeVoicesPrepared,
   pocketPython,
   type PocketLanguage,
 } from "./pocket.ts";
@@ -59,12 +60,13 @@ export async function pocketCloningState() {
     language,
     installed: await pocketLanguageInstalled(language.model),
     cloning: await pocketCloningAvailable(language.model),
+    voicesPrepared: await pocketNativeVoicesPrepared(language),
   })));
   const languages = states.filter((state) => state.installed && state.cloning).map((state) => state.language.code);
   return {
     available: languages.length > 0,
     languages,
-    missing: states.filter((state) => state.installed && !state.cloning).map((state) => state.language.label),
+    missing: states.filter((state) => state.installed && !(state.cloning && state.voicesPrepared)).map((state) => state.language.label),
     tokenSet: Boolean(env.HF_TOKEN),
     downloading: downloads.downloading(CLONING),
     error: downloads.error(CLONING),

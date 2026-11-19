@@ -216,7 +216,7 @@ async function syncPocket(home, dataDir, onOutput) {
     env: uvEnv(home),
     onOutput,
   });
-  await sh(pocketPython(home), [path.join(home, "scripts", "synthesize_pocket_tts.py"), "--cache-only", "--extra-language", "french_24l", "--native-voices-dir", path.join(dataDir, "pocket-voices")], {
+  await sh(pocketPython(home), [path.join(home, "scripts", "synthesize_pocket_tts.py"), "--cache-only", "--language", "french_24l", "--extra-language", "english_2026-04", "--native-voices-dir", path.join(dataDir, "pocket-voices")], {
     env: { HF_HUB_OFFLINE: "0" },
     onOutput,
   });

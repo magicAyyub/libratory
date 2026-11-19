@@ -42,7 +42,7 @@ export function PocketCloningNotice({ cloning }: { cloning: PocketCloningState }
       onDownload={() => download.mutate()}
     >
       <p className="text-(--text-secondary)">
-        <strong>Voice cloning</strong> needs Pocket TTS's gated model for each language
+        <strong>Voice cloning and native voices</strong> need Pocket TTS's gated model for each language
         {cloning.missing.length > 0 ? ` — still missing: ${cloning.missing.join(", ")}` : ""}.
         The recording you clone from stays on this machine.
       </p>
