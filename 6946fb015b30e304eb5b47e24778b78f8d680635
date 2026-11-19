@@ -1,0 +1,4 @@
+Reviewed: high
+Outcome: Two high reviews of 4780eed..HEAD. Fixed: model caching and pinned revisions, per-language cloning, Kokoro book and lane migration, resume key, stopping chapters, native voice retries, fork release guard. Accepted: Pocket highlights paragraphs by design; other engines' resume after a voice change predates this work.
+By: ayouba
+At: 2026-11-19T01:59:04.359Z
