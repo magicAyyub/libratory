@@ -1,0 +1,4 @@
+Reviewed: high
+Outcome: Three high review rounds on 923999c..HEAD. Fixed false hyphens, extraction path, time and currency misreads, singulars, decorative runs and regex cost. Accepted: unlisted compounds may lose a hyphen, unannounced times and ambiguous amounts stay as written.
+By: ayouba
+At: 2026-11-19T02:52:29.461Z
