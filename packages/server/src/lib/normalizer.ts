@@ -1,4 +1,4 @@
-import { joinTextBlocks, type TextBlock } from "./extracted-text.ts";
+import { joinTextBlocks, rejoinLineEndHyphens, type TextBlock } from "./extracted-text.ts";
 
 export function normalizeForTts(text: string, options: { preserveVerse?: boolean } = {}): string {
   let out = text;
@@ -27,8 +27,8 @@ export function normalizeForTts(text: string, options: { preserveVerse?: boolean
   // Remove bare URLs, and the bracket a book wraps them in — a lone < is read as a word
   out = out.replace(/<?https?:\/\/\S+/g, "");
 
-  // Rejoin hyphenated line breaks: "con-\n" → "con"
-  if (!options.preserveVerse) out = out.replace(/(\w)-\n(\w)/g, "$1$2");
+  // Rejoin words split at a line end; a real hyphen stays
+  if (!options.preserveVerse) out = rejoinLineEndHyphens(out, "latin");
 
   // Collapse multiple blank lines into one
   out = out.replace(/\n{3,}/g, "\n\n");

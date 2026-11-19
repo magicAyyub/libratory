@@ -44,6 +44,16 @@ describe("normalizeForTts", () => {
     );
   });
 
+  it("keeps real hyphens at a line end and joins split words", () => {
+    expect(normalizeForTts("Il est peut-\nêtre ici, dit-\nelle.")).toBe("Il est peut-être ici, dit-elle.");
+    expect(normalizeForTts("C'est-\nà-\ndire, vis-\nà-vis.")).toBe("C'est-à-dire, vis-à-vis.");
+    expect(normalizeForTts("Jean-\nPierre arrive.")).toBe("Jean-Pierre arrive.");
+    expect(normalizeForTts("Y a-t-\nil, va-\nle, Mc-\nDonald, vas-\ny")).toBe("Y a-t-il, vale, McDonald, vas-y");
+    expect(normalizeForTts("peut-\ne\u0302tre")).toBe("peut-e\u0302tre");
+    expect(normalizeForTts("cou-\nleur, for-\nce, mer-\nci, sé-\nparé, but-\nton")).toBe("couleur, force, merci, séparé, button");
+    expect(normalizeForTts("что-\nто")).toBe("что-\nто");
+  });
+
   it("rejoins hyphenated line breaks", () => {
     expect(normalizeForTts("con-\ntinue")).toBe("continue");
   });
