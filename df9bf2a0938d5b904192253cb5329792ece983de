@@ -1,0 +1,4 @@
+Reviewed: manual
+Outcome: Dependency fix on top of the reviewed Pocket TTS work: pnpm lockfile restored with the pinned pnpm, soupsieve and fast-xml-parser updated. Checked by frozen install, typecheck, pnpm audit and uv audit.
+By: ayouba
+At: 2026-11-19T02:04:46.485Z
