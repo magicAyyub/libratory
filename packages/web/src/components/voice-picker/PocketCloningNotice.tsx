@@ -3,6 +3,7 @@ import { DownloadNotice } from "../DownloadNotice.tsx";
 
 type PocketCloningState = {
   tokenSet: boolean;
+  missing: string[];
   downloading: boolean;
   error: string | null;
   envFile: string;
@@ -34,14 +35,15 @@ export function PocketCloningNotice({ cloning }: { cloning: PocketCloningState }
       className="mx-1 my-2"
       testIdPrefix="pocket-cloning"
       settledLabel="Voice cloning"
-      buttonLabel="Download cloning weights (370 MB)"
+      buttonLabel="Download cloning weights"
       downloading={cloning.downloading}
       disabled={download.isPending}
       error={cloning.error ?? download.error?.message ?? null}
       onDownload={() => download.mutate()}
     >
       <p className="text-(--text-secondary)">
-        <strong>Voice cloning</strong> needs Pocket TTS's gated English model — about <strong>370 MB</strong>, once.
+        <strong>Voice cloning</strong> needs Pocket TTS's gated model for each language
+        {cloning.missing.length > 0 ? ` — still missing: ${cloning.missing.join(", ")}` : ""}.
         The recording you clone from stays on this machine.
       </p>
     </DownloadNotice>

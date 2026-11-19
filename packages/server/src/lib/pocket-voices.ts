@@ -71,8 +71,8 @@ export async function createCustomPocketVoice(
   if (!(await pocketLanguageInstalled(language.model))) {
     throw new Error(`Download the ${language.label} voices first, then clone this voice`);
   }
-  if (!(await pocketCloningAvailable())) {
-    throw new Error("Voice cloning weights are not installed — download them from Your voices in the voice picker");
+  if (!(await pocketCloningAvailable(language.model))) {
+    throw new Error(`${language.label} cloning weights are not installed — download them from Your voices in the voice picker`);
   }
 
   const id = randomUUID();

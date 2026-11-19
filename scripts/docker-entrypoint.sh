@@ -6,7 +6,8 @@
 #
 # Non-fatal on purpose: with no network and no cached voice the app still comes up — the library,
 # uploads and raw extraction all work — and synthesis reports the missing voice when asked.
-if ! /opt/venv-pocket/bin/python /app/scripts/synthesize_pocket_tts.py --cache-only --language french_24l >/dev/null; then
+if ! /opt/venv-pocket/bin/python /app/scripts/synthesize_pocket_tts.py --cache-only --extra-language french_24l \
+    --native-voices-dir "${DATA_DIR:-/data}/pocket-voices" >/dev/null; then
   echo "warning: could not cache the Pocket TTS voice; synthesis will fail until a restart with network access" >&2
 fi
 # Piper's Bulgarian voice, 63 MB, the same way: from the cache when it is there, else fetched once

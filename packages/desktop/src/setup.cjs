@@ -203,12 +203,12 @@ async function syncPiper(home, onOutput) {
 }
 
 // Pocket TTS is the default narrator. It needs numpy 2, so it gets a venv of its own like Piper,
-// and its French model is cached here because synthesis runs offline.
+// and its English and French models are cached here because synthesis runs offline.
 function pocketPython(home) {
   return path.join(home, "python-pocket", "bin", "python");
 }
 
-async function syncPocket(home, onOutput) {
+async function syncPocket(home, dataDir, onOutput) {
   const uv = await ensureUv(home, onOutput);
   const venv = path.join(home, "python-pocket");
   await sh(uv, ["venv", "--python", "3.12", "--allow-existing", venv], { env: uvEnv(home), onOutput });
@@ -216,7 +216,7 @@ async function syncPocket(home, onOutput) {
     env: uvEnv(home),
     onOutput,
   });
-  await sh(pocketPython(home), [path.join(home, "scripts", "synthesize_pocket_tts.py"), "--cache-only", "--language", "french_24l"], {
+  await sh(pocketPython(home), [path.join(home, "scripts", "synthesize_pocket_tts.py"), "--cache-only", "--extra-language", "french_24l", "--native-voices-dir", path.join(dataDir, "pocket-voices")], {
     env: { HF_HUB_OFFLINE: "0" },
     onOutput,
   });

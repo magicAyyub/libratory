@@ -298,7 +298,7 @@ const STEPS = [
     async run(ctx, detail) {
       if (!ctx.pending.pocket) return "up to date";
       detail("Installing Pocket TTS and its French voice — about 2 GB, once");
-      await setup.syncPocket(HOME, (line) => detail(line.trim().split("\n").at(-1)));
+      await setup.syncPocket(HOME, dataDir(), (line) => detail(line.trim().split("\n").at(-1)));
       runtime.writeState(HOME, { pocketLock: ctx.pending.want.pocketLock });
     },
   },

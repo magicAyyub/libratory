@@ -133,8 +133,9 @@ Says what a highlight actually means, so a reader can be honest about it:
 
 Piper reports word timings from its phoneme durations
 (`scripts/phoneme_words.py`), and BgTTS from its own cross-attention (`scripts/attention_words.py`).
-Engines chunked a sentence at a time (macOS `say`, MMS, Pocket)
-land on sentence-sized chunks without them, and audio synthesized
+Engines chunked a sentence at a time (macOS `say`, MMS) land on sentence-sized chunks without
+them. Pocket TTS reads paragraph-sized chunks for a steadier voice, so its highlight is a
+paragraph. Audio synthesized
 before word timings existed stays at `chunk`.
 
 ### `marks`

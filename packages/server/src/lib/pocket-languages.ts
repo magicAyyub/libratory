@@ -55,8 +55,16 @@ export function startPocketLanguageDownload(language: PocketLanguage): { started
 const CLONING = "cloning";
 
 export async function pocketCloningState() {
+  const states = await Promise.all(POCKET_LANGUAGES.map(async (language) => ({
+    language,
+    installed: await pocketLanguageInstalled(language.model),
+    cloning: await pocketCloningAvailable(language.model),
+  })));
+  const languages = states.filter((state) => state.installed && state.cloning).map((state) => state.language.code);
   return {
-    available: await pocketCloningAvailable(),
+    available: languages.length > 0,
+    languages,
+    missing: states.filter((state) => state.installed && !state.cloning).map((state) => state.language.label),
     tokenSet: Boolean(env.HF_TOKEN),
     downloading: downloads.downloading(CLONING),
     error: downloads.error(CLONING),
@@ -64,10 +72,22 @@ export async function pocketCloningState() {
   };
 }
 
-// The English checkpoint from the gated repo is what carries the cloning weights; with HF_TOKEN in
-// the environment the cache step tries that repo first, and --require-cloning turns its silent
-// fallback to the mirror into the error the user needs to see.
-export function startPocketCloningDownload(): { started: boolean } {
+// Cloning needs the gated checkpoint of every language it can read, so this fetches them for each
+// installed language; --require-cloning turns the library's silent fallback to the mirror into the
+// error the user needs to see. The same weights are what native voices are encoded with.
+export async function startPocketCloningDownload(): Promise<{ started: boolean }> {
   if (!env.HF_TOKEN) throw new Error(`Set HF_TOKEN in ${envFilePath} and restart Libratory first`);
-  return downloads.start(CLONING, pocketPython(), [POCKET_SCRIPT, "--cache-only", "--require-cloning", "--language", DEFAULT_POCKET_LANGUAGE.model]);
+  const others = (await Promise.all(POCKET_LANGUAGES.map(async (language) => (
+    language !== DEFAULT_POCKET_LANGUAGE && await pocketLanguageInstalled(language.model) ? language.model : null
+  )))).filter((model): model is string => model !== null);
+  return downloads.start(CLONING, pocketPython(), [
+    POCKET_SCRIPT,
+    "--cache-only",
+    "--require-cloning",
+    "--language",
+    DEFAULT_POCKET_LANGUAGE.model,
+    ...others.flatMap((model) => ["--extra-language", model]),
+    "--native-voices-dir",
+    pocketVoicesDir,
+  ]);
 }

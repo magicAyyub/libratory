@@ -28,6 +28,7 @@ import { measureBookDiskUsage, measureDirs, removeDirs, bookTotalSizeCached, fil
 import { chapterChunkPreviewDir } from "../lib/chunk-previews.ts";
 import { translationChunkPreviewDir } from "../workers/synthesize-translation.ts";
 import { resetChaptersKeepingInserted } from "../lib/insert-chapters.ts";
+import { synthesisRunning } from "../lib/synthesis-registry.ts";
 import { isGarbled, replaceFileWords } from "../lib/ocr-text-layer.ts";
 import { countAsciiNonAscii } from "../lib/token-estimate.ts";
 import { assembleJobKey, documentJobKey, inFlightInputs, outputChapters } from "../lib/output-readiness.ts";
@@ -1059,7 +1060,8 @@ export const booksRouter = router({
         .where(and(eq(chapters.bookId, input.id), eq(chapters.selected, true)))
         .orderBy(asc(chapters.index));
 
-      const processable = selectedChapters.filter((ch) => ORIGINAL_SYNTHESIZABLE.includes(ch.status));
+      // A chapter still stopping would race its old run for the row, so it waits for the next pass
+      const processable = selectedChapters.filter((ch) => ORIGINAL_SYNTHESIZABLE.includes(ch.status) && !synthesisRunning(ch.id));
 
       if (processable.length === 0) {
         throw new Error("No selected chapters are ready for synthesis");

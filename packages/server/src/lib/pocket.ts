@@ -1,4 +1,4 @@
-import { access, readdir } from "node:fs/promises";
+import { access, readdir, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -88,7 +88,7 @@ const POCKET_VOICE_IDS = new Set(POCKET_VOICES.map((voice) => voice.id));
 export const POCKET_NATIVE_VOICES: Record<string, PocketVoice[]> = {
   fr: [
     { id: "fabien", name: "Fabien", license: "CC0", note: "French speaker" },
-    ...Array.from({ length: 24 }, (_, index): PocketVoice => {
+    ...Array.from({ length: 35 }, (_, index): PocketVoice => {
       const number = String(index + 1).padStart(2, "0");
       return { id: `voix-${number}`, name: `Voix ${number}`, license: "CC BY 4.0", note: "French speaker, CML-TTS" };
     }),
@@ -138,43 +138,47 @@ function hfCacheRoot(): string {
     : path.join(os.homedir(), ".cache", "huggingface", "hub");
 }
 
-// The gated cloning weights live in kyutai/pocket-tts; the catalog-only weights come from
-// kyutai/pocket-tts-without-voice-cloning, which needs no account. Presence on disk is the
-// honest signal — a token can be set without setup.sh having fetched anything.
-// A language is usable once its checkpoint is in the HF cache; downloads land there, so no server
-// restart is needed — the next synthesis subprocess simply finds it.
-export async function pocketLanguageInstalled(model: string): Promise<boolean> {
-  // With HF_TOKEN set the weights come from the gated repo; without one they come from the
-  // cloning-free mirror. Either satisfies synthesis, so accept whichever is on disk.
-  const repos = ["models--kyutai--pocket-tts", "models--kyutai--pocket-tts-without-voice-cloning"];
-  for (const repo of repos) {
-    const snapshots = path.join(hfCacheRoot(), repo, "snapshots");
-    let entries: string[];
-    try {
-      entries = await readdir(snapshots);
-    } catch {
-      continue;
+const GATED_REPO = "pocket-tts";
+const MIRROR_REPO = "pocket-tts-without-voice-cloning";
+
+// Each pocket-tts release pins its weights to a revision and synthesis runs offline, so the same
+// language cached by another release does not count. The installed package's config is the truth.
+async function pinnedRevision(model: string, repo: string): Promise<string | null> {
+  const lib = path.resolve(env.POCKET_ENV_PATH, "..", "lib");
+  try {
+    for (const python of await readdir(lib)) {
+      const config = path.join(lib, python, "site-packages", "pocket_tts", "config", `${model}.yaml`);
+      const text = await readFile(config, "utf-8").catch(() => null);
+      if (text === null) continue;
+      const line = text.split("\n").find((entry) => entry.includes(`hf://kyutai/${repo}/languages/${model}/model.safetensors@`));
+      return line?.split("@").at(-1)?.trim() ?? null;
     }
-    const found = await Promise.all(
-      entries.map((entry) => pathExists(path.join(snapshots, entry, "languages", model, "model.safetensors"))),
-    );
-    if (found.some(Boolean)) return true;
+  } catch {
+    // No engine environment yet: fall through to any cached revision
   }
-  return false;
+  return null;
 }
 
-export async function pocketCloningAvailable(): Promise<boolean> {
-  const snapshots = path.join(hfCacheRoot(), "models--kyutai--pocket-tts", "snapshots");
-  let entries: string[];
-  try {
-    entries = await readdir(snapshots);
-  } catch {
-    return false;
-  }
-  const found = await Promise.all(
-    entries.map((entry) => pathExists(path.join(snapshots, entry, "languages", DEFAULT_POCKET_LANGUAGE.model, "model.safetensors"))),
-  );
-  return found.some(Boolean);
+async function pocketWeightsCached(repo: string, model: string): Promise<boolean> {
+  const snapshots = path.join(hfCacheRoot(), `models--kyutai--${repo}`, "snapshots");
+  const weights = (revision: string) => path.join(snapshots, revision, "languages", model, "model.safetensors");
+  const pinned = await pinnedRevision(model, repo);
+  if (pinned) return pathExists(weights(pinned));
+  const entries = await readdir(snapshots).catch(() => [] as string[]);
+  return (await Promise.all(entries.map((entry) => pathExists(weights(entry))))).some(Boolean);
+}
+
+// A language is usable once its checkpoint is in the HF cache; downloads land there, so no server
+// restart is needed. With HF_TOKEN the weights come from the gated repo, without one from the
+// cloning-free mirror; either satisfies synthesis.
+export async function pocketLanguageInstalled(model: string): Promise<boolean> {
+  return (await pocketWeightsCached(GATED_REPO, model)) || pocketWeightsCached(MIRROR_REPO, model);
+}
+
+// Cloning encodes against the checkpoint it will read with, so each language needs its own gated
+// weights. Presence on disk is the honest signal: a token can be set with nothing fetched.
+export async function pocketCloningAvailable(model: string = DEFAULT_POCKET_LANGUAGE.model): Promise<boolean> {
+  return pocketWeightsCached(GATED_REPO, model);
 }
 
 const CUSTOM_VOICE_PREFIX = "custom:";

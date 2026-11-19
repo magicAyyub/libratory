@@ -33,7 +33,7 @@ cross-referenced against the per-directory licensing in `kyutai/tts-voices`:
 | --- | --- | --- |
 | CC0 — voice-donations, voice-zero (LibriVox) | marius, javert, bill_boerst, peter_yearsley, stuart_bell, caro_davy | Yes, unrestricted |
 | CC0 — unmute-prod-website, native French | fabien | Yes, unrestricted |
-| CC BY 4.0 — CML-TTS, native French | voix-01 … voix-24 | Yes, with attribution |
+| CC BY 4.0 — CML-TTS, native French | voix-01 … voix-35 | Yes, with attribution |
 | CC BY 4.0 — VCTK, alba-mackenna | alba, anna, vera, fantine, charles, paul, eponine, azelma, george, mary, jane, michael, eve | Yes, with attribution |
 | CC BY 4.0 — Common Voice (hosted in the model repo) | giovanni, lola, juergen, rafael | Yes, with attribution |
 | **CC BY-NC 4.0 — expresso, ears** | **cosette, jean** | **No — non-commercial only** |

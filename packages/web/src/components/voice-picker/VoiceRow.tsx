@@ -19,7 +19,7 @@ function describe(voice: Voice, foreignIn: string | null, reading: string | null
   const parts: string[] = [];
   if (foreignIn) parts.push(`Not a native ${languageLabel(foreignIn)} voice`);
   if (voice.gender) parts.push(voice.gender === "F" ? "Female" : "Male");
-  parts.push(voiceHasWordTiming(voice.id, reading) ? "Word timing" : "Sentence timing");
+  parts.push(voiceHasWordTiming(voice.id, reading) ? "Word timing" : voice.id.startsWith("pocket:") ? "Paragraph timing" : "Sentence timing");
   if (voice.note) parts.push(voice.note);
   return parts.join(" · ");
 }

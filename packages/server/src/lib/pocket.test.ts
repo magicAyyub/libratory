@@ -20,7 +20,7 @@ describe("Pocket TTS voice ids", () => {
     expect(pocketLanguageArgs("fr:fabien")).toEqual(["--language", "french_24l"]);
     expect(parsePocketVoice("it:voix-07")).toBeNull();
     expect(parsePocketVoice("voix-07")).toBeNull();
-    expect(parsePocketVoice("fr:voix-25")).toBeNull();
+    expect(parsePocketVoice("fr:voix-36")).toBeNull();
   });
 
   it("still treats catalog voices as catalog voices under French", () => {

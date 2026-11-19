@@ -37,6 +37,11 @@ NATIVE_VOICES = {
                 "5790_4893_000052-0001", "7591_6742_000149-0002", "6318_7016_000027-0002",
                 "7601_7727_000062-0001", "7762_8734_000048-0002", "9834_9697_000150-0003",
                 "10177_10625_000134-0003", "10179_11051_000005-0001", "12080_11650_000047-0001",
+                # Appended rather than sorted in, so the numbers above keep naming the same voices
+                "1406_1028_000009-0003", "1591_1028_000108-0004", "1770_1028_000036-0002",
+                "2223_1745_000009-0002", "4193_3103_000004-0001", "4482_3103_000063-0001",
+                "4937_3731_000004-0001", "8128_7016_000047-0002", "10087_11650_000028-0002",
+                "12205_11650_000004-0002", "12977_10625_000037-0001",
             ], start=1)
         },
     },
@@ -110,11 +115,16 @@ def prepare_native_voices(model, language: str, voices_dir: str) -> None:
 
     target.mkdir(parents=True, exist_ok=True)
     for voice, source in missing.items():
-        audio = hf_hub_download(NATIVE_VOICE_REPO, source, revision=NATIVE_VOICE_REVISION)
-        state = model.get_state_for_audio_prompt(Path(audio), truncate=True)
         partial = target / f"{voice}.partial"
-        export_model_state(state, partial)
-        partial.replace(target / f"{voice}.safetensors")
+        try:
+            audio = hf_hub_download(NATIVE_VOICE_REPO, source, revision=NATIVE_VOICE_REVISION)
+            state = model.get_state_for_audio_prompt(Path(audio), truncate=True)
+            export_model_state(state, partial)
+            partial.replace(target / f"{voice}.safetensors")
+        except Exception as exc:
+            # One missing voice must not fail the model download it came with
+            partial.unlink(missing_ok=True)
+            print(f"warning: could not prepare voice {voice}: {exc}", file=sys.stderr)
 
 
 def cache_models(language: str, require_cloning: bool = False, native_voices_dir: str | None = None) -> None:
@@ -146,6 +156,7 @@ def main() -> None:
     parser.add_argument("--chunks-dir", default=None, help="Optional directory to persist per-chunk WAV previews")
     parser.add_argument("--language", default=DEFAULT_LANGUAGE, help="Pocket TTS language model to load")
     parser.add_argument("--cache-only", action="store_true", help="Download model and catalog voices, then exit")
+    parser.add_argument("--extra-language", action="append", default=[], help="With --cache-only: also cache this language model")
     parser.add_argument("--require-cloning", action="store_true", help="With --cache-only: fail unless the gated cloning weights arrived")
     parser.add_argument("--native-voices-dir", default=None, help="With --cache-only: also encode this language's native voices here")
     parser.add_argument("--export-voice", default=None, help="Reference audio to encode into a reusable voice state")
@@ -153,7 +164,8 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.cache_only:
-        cache_models(args.language, args.require_cloning, args.native_voices_dir)
+        for language in [args.language, *args.extra_language]:
+            cache_models(language, args.require_cloning, args.native_voices_dir)
         return
 
     if args.export_voice:
@@ -169,8 +181,8 @@ def main() -> None:
     chunks = read_chunks(args.input)
     synthesis_chunks = [synthesis_text_for(chunk, args.language) for chunk in chunks]
     if args.chunks_dir:
-        # New weights change the voice, so audio from another release must not be stitched in on resume
-        write_chunk_manifest(args.chunks_dir, chunks, synthesis_chunks, f"pocket-tts {version('pocket-tts')} {args.language}")
+        # Another release or narrator changes the voice, so audio from another release must not be stitched in on resume
+        write_chunk_manifest(args.chunks_dir, chunks, synthesis_chunks, f"pocket-tts {version('pocket-tts')} {args.language} {args.voice}")
     print(json.dumps({"type": "chunks", "total": len(chunks)}), flush=True)
 
     loaded: list = []

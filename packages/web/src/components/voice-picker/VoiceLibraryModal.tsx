@@ -405,11 +405,16 @@ export function VoiceLibraryModal({
                     />
                   ))}
                   {pocket?.cloning.available ? (
-                    <PocketVoiceCloner
-                      languages={pocketLanguages.filter((candidate) => candidate.installed)}
-                      preferredLanguages={priorityLanguages}
-                      onAdded={() => void refetchPocket()}
-                    />
+                    <>
+                      <PocketVoiceCloner
+                        languages={pocketLanguages.filter((candidate) => pocket.cloning.languages.includes(candidate.code))}
+                        preferredLanguages={priorityLanguages}
+                        onAdded={() => void refetchPocket()}
+                      />
+                      {pocket.cloning.missing.length > 0 && pocket.cloning.tokenSet && (
+                        <PocketCloningNotice cloning={pocket.cloning} />
+                      )}
+                    </>
                   ) : (
                     pocket && <PocketCloningNotice cloning={pocket.cloning} />
                   )}
